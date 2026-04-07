@@ -803,7 +803,7 @@
   <span class="sep">|</span>
   <a href="#" onclick="openTerms(); return false;">Terms of Use</a>
   <span class="sep">|</span>
-  <a href="https://www.linkedin.com/in/amir-kelifa-aaa47a195" target="_blank" rel="noopener">Contact</a>
+  <a href="https://www.linkedin.com/in/amir-kelifa-aaa47a195" target="_blank" rel="noopener" onclick="if(window.posthog) posthog.capture('contact_clicked')">Contact</a>
   <span class="copy">© 2026 B-Box. All rights reserved. Built by Amir Kelifa.</span>
 </footer>
 
@@ -874,6 +874,16 @@
 // ══════════════════════════════════════════════════
 // B-BOX v2 — UNIFIED FINANCIAL ENGINE
 // ══════════════════════════════════════════════════
+
+// ── IN-APP BROWSER DETECTION ──
+const isInAppBrowser = /LinkedIn|FBAN|FBAV|Instagram|Twitter|MicroMessenger/i.test(navigator.userAgent);
+if (isInAppBrowser) {
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#F59E0B;color:#0B1E33;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;';
+  banner.innerHTML = 'For the best experience, open in your browser: tap ⋮ or ⋯ above and select "Open in Browser" <span style="margin-left:8px;cursor:pointer;opacity:.7" onclick="this.parentElement.remove()">✕</span>';
+  document.body.prepend(banner);
+  if (window.posthog) posthog.capture('in_app_browser_detected', { source: navigator.userAgent.match(/LinkedIn|FBAN|FBAV|Instagram|Twitter/i)?.[0] || 'unknown' });
+}
 
 // ── NAVIGATION ──
 let currentStep = 1;
@@ -2023,6 +2033,10 @@ function renderScorecard() {
 // ═══════════════════════════════════════════════════
 function downloadScorecard() {
   if (window.posthog) posthog.capture('scorecard_downloaded');
+  // Warn in-app browser users
+  if (isInAppBrowser) {
+    showToast('For downloads, open b-box.dev in your phone browser (tap ⋮ → Open in Browser).');
+  }
   const el = document.getElementById('scorecard');
   if (!el) return showToast('Scorecard not found.');
   // Convert Chart.js canvases to images before html2canvas capture
@@ -2225,3 +2239,4 @@ updateProgress();
 })();
 </script></body>
 </html>
+
