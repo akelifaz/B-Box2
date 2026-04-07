@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>B-Box v2 — Stress-test your project before capital moves</title>
+  <meta name="description" content="B-Box is a frontier market pre-investment stress test that turns project assumptions into a clear score, dominant risk, break conditions, and verdict." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- PostHog Analytics -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId setPersonProperties".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_ucsZKnkaJumGSHh5vN5Vgdg455VFdxjZK9BTiNqjQaPL', {
+      api_host: 'https://us.i.posthog.com',
+      person_profiles: 'anonymous',
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: false
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --n: #0B1E33;
+      --n2: #0F2A44;
+      --n3: #1A3A55;
+      --t: #20C9B7;
+      --t2: #17A090;
+      --t-glow: rgba(32,201,183,.15);
+      --g: #E5E7EB;
+      --g2: #9CA3AF;
+      --g3: #4B5563;
+      --am: #F59E0B;
+      --am-bg: rgba(245,158,11,.1);
+      --re: #EF4444;
+      --re-bg: rgba(239,68,68,.1);
+      --dr: #991B1B;
+      --ok: #10B981;
+      --ok-bg: rgba(16,185,129,.1);
+      --shadow: 0 20px 50px rgba(0,0,0,.28);
+      --r: 16px;
+      --container: 900px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(180deg, var(--n) 0%, #081726 100%);
+      color: #fff;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .app { max-width: var(--container); margin: 0 auto; padding: 16px 14px 60px; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 30;
+      margin: 0 -14px 18px; padding: 14px 14px 12px;
+      background: rgba(11,30,51,.94); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--n3);
+    }
+    .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .logo-svg { flex-shrink: 0; }
+    .brandname { font-family: "Oswald", sans-serif; font-size: 22px; line-height: 1; letter-spacing: 1.8px; color: var(--t); }
+    .brandtag { margin-top: 4px; font-size: 11px; color: var(--g2); text-transform: uppercase; letter-spacing: 1.3px; }
+    .badge {
+      flex-shrink: 0; padding: 8px 10px; border-radius: 999px;
+      border: 1px solid rgba(32,201,183,.35); color: var(--t);
+      background: rgba(32,201,183,.08); font-size: 10px; font-weight: 800;
+      letter-spacing: 1.2px; text-transform: uppercase;
+    }
+    .progress { margin-top: 12px; }
+    .pbar { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 8px; }
+    .pseg { height: 4px; border-radius: 999px; background: var(--n3); transition: background .3s; }
+    .pseg.on { background: var(--t); }
+    .pseg.done { background: var(--t2); }
+    .plabel { font-size: 10px; color: var(--g2); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; animation: fade .26s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes countUp { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+
+    /* ── PANELS ── */
+    .hero, .panel {
+      background: linear-gradient(180deg, rgba(15,42,68,.98), rgba(12,33,53,.98));
+      border: 1px solid var(--n3); border-radius: var(--r); box-shadow: var(--shadow);
+    }
+    .hero { padding: 22px 18px; }
+    .panel { padding: 18px; }
+    .eyebrow {
+      font-family: "Oswald", sans-serif; font-size: 11px; font-weight: 600;
+      color: var(--t); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    h1, h2, h3 { font-family: "Oswald", sans-serif; letter-spacing: .5px; margin: 0; }
+    h1 { font-size: 34px; line-height: 1.05; margin-bottom: 10px; }
+    h2 { font-size: 28px; line-height: 1.08; margin-bottom: 8px; }
+    h3 { font-size: 20px; }
+    .lead { margin: 0; color: var(--g2); line-height: 1.65; font-size: 15px; }
+    .bullets { margin-top: 18px; display: grid; gap: 10px; }
+    .bullet {
+      background: rgba(11,30,51,.8); border: 1px solid var(--n3); border-radius: 14px;
+      padding: 12px 14px; font-size: 14px; line-height: 1.5;
+    }
+    .bullet strong { color: var(--t); }
+
+    /* ── FORM ELEMENTS ── */
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .sectionsub { margin-top: 6px; color: var(--g2); line-height: 1.6; font-size: 14px; }
+    .fields { display: grid; gap: 14px; }
+    .g2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .g3 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .section-divider {
+      margin: 20px 0 14px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--n3);
+      font-family: "Oswald", sans-serif; font-size: 13px; font-weight: 700;
+      color: var(--t); letter-spacing: 2px; text-transform: uppercase;
+    }
+    .labelrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+    label { display: block; color: var(--g2); font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+    input, select, textarea {
+      width: 100%; background: var(--n2); border: 1px solid var(--n3); color: #fff;
+      padding: 14px; border-radius: 12px; font-size: 15px; font-family: inherit; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--t); box-shadow: 0 0 0 3px rgba(32,201,183,.12); }
+    select option { background: var(--n2); color: #fff; }
+    textarea { min-height: 94px; resize: vertical; }
+    .hint { margin-top: 6px; font-size: 12px; color: var(--g3); line-height: 1.45; }
+    .use-default { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--g2); cursor: pointer; }
+    .checkbox { width: 18px; height: 18px; accent-color: var(--t); }
+    .help {
+      width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center;
+      border: 1px solid rgba(32,201,183,.35); background: rgba(32,201,183,.08); color: var(--t);
+      font-size: 11px; font-weight: 900; cursor: pointer; flex-shrink: 0;
+    }
+    .btn {
+      appearance: none; border: none; border-radius: 12px; padding: 14px 16px;
+      font-family: "Oswald", sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: .2s ease;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--t), var(--t2)); color: var(--n); }
+    .btn-secondary { background: transparent; border: 1px solid var(--n3); color: var(--g2); }
+    .btn-sm { padding: 10px 14px; font-size: 12px; }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+    /* ── LOADING ── */
+    .loading { text-align: center; padding: 34px 10px; }
+    .spin {
+      width: 42px; height: 42px; margin: 0 auto 20px; border-radius: 50%;
+      border: 3px solid var(--n3); border-top-color: var(--t);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loadingsteps { max-width: 420px; margin: 20px auto 0; display: grid; gap: 10px; }
+    .loadingitem {
+      background: var(--n2); border: 1px solid var(--n3); border-radius: 12px; padding: 11px 12px;
+      display: flex; justify-content: space-between; color: var(--g2); font-size: 13px;
+    }
+    .loadingitem strong { color: #E7EFF6; }
+    .loadingitem .status { font-size: 10px; color: var(--t); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .loadingitem .status.done { color: var(--ok); }
+
+    /* ── RESULTS HEADER ── */
+    .vhdr {
+      background: var(--n2); border-bottom: 1px solid var(--n3); border-radius: 16px 16px 0 0;
+      padding: 24px 20px;
+    }
+    .vtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .vmeta { font-size: 11px; color: var(--g2); letter-spacing: 1.5px; text-transform: uppercase; font-family: "Oswald", sans-serif; margin-bottom: 6px; }
+    .vname { font-family: "Oswald", sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .vbadge {
+      display: inline-block; padding: 7px 18px; border-radius: 4px; font-family: "Oswald", sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .maturity {
+      display: inline-block; margin-top: 8px; padding: 5px 10px; border-radius: 4px;
+      font-size: 11px; color: var(--t); background: rgba(32,201,183,.1);
+      border: 1px solid rgba(32,201,183,.2); font-family: "Oswald", sans-serif; letter-spacing: 1px;
+    }
+    .sblock { text-align: center; flex-shrink: 0; }
+    .snum { font-family: "Oswald", sans-serif; font-size: 64px; font-weight: 700; line-height: 1; }
+    .slabel { font-size: 10px; color: var(--g2); letter-spacing: 2px; text-transform: uppercase; font-family: "Oswald", sans-serif; margin-top: 4px; }
+
+    /* ── METRICS ROW ── */
+    .mrow {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 1px;
+      background: var(--n3); border-top: 1px solid var(--n3);
+    }
+    .mc { background: var(--n2); padding: 16px; }
+    .mv { font-family: "Oswald", sans-serif; font-size: 22px; font-weight: 700; color: var(--t); }
+    .ml { font-size: 10px; color: var(--g2); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-family: "Oswald", sans-serif; }
+    .mn { font-size: 11px; color: var(--g3); margin-top: 3px; }
+
+    /* ── RESULTS BODY ── */
+    .vbody { padding: 0 20px 28px; }
+    .vsec { margin-top: 28px; }
+    .vtitle {
+      font-family: "Oswald", sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--n3);
+    }
+    .cgrid, .rgrid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .ccard, .rcard, .sumcard {
+      background: var(--n2); border: 1px solid var(--n3); border-radius: 10px; padding: 18px;
+    }
+    .ctitle, .rname {
+      font-family: "Oswald", sans-serif; font-size: 11px; font-weight: 700;
+      color: var(--t); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .chartwrap { position: relative; height: 280px; }
+    .chartwrap-sm { position: relative; height: 230px; }
+    .rval { font-family: "Oswald", sans-serif; font-size: 28px; font-weight: 700; margin: 8px 0 4px; }
+    .rbench { font-size: 11px; color: var(--g3); margin-bottom: 8px; }
+    .rdesc { font-size: 12px; color: var(--g2); line-height: 1.6; }
+    .rstatus {
+      display: inline-block; padding: 3px 10px; border-radius: 3px; font-family: "Oswald", sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px;
+    }
+
+    /* ── VARIABLE ITEMS ── */
+    .vi {
+      margin-bottom: 14px; padding: 14px 16px; background: var(--n2); border-radius: 8px; border-left: 3px solid var(--n3);
+    }
+    .vi.g { border-left-color: var(--ok); }
+    .vi.w { border-left-color: var(--am); }
+    .vi.b { border-left-color: var(--re); }
+    .vihdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .viname { font-family: "Oswald", sans-serif; font-size: 13px; font-weight: 600; }
+    .viwt { font-size: 10px; color: var(--g3); margin-left: 6px; }
+    .vsc { font-family: "Oswald", sans-serif; font-size: 14px; font-weight: 700; }
+    .vitr { background: var(--n3); border-radius: 3px; height: 5px; margin-bottom: 8px; }
+    .vifill { height: 5px; border-radius: 3px; }
+    .viverd { font-size: 12px; color: var(--g2); line-height: 1.6; }
+    .vi-impact { font-size: 11px; color: var(--g3); margin-top: 6px; font-style: italic; }
+
+    /* ── SENSITIVITY MATRIX ── */
+    .sens-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .sens-table th, .sens-table td {
+      padding: 8px 6px; text-align: center; border: 1px solid var(--n3);
+      font-family: "Oswald", sans-serif; font-weight: 500;
+    }
+    .sens-table th { background: var(--n); color: var(--g2); font-size: 10px; letter-spacing: .8px; text-transform: uppercase; }
+    .sens-table .corner { background: transparent; border: none; }
+    .sens-table .row-label { text-align: right; background: var(--n); color: var(--g2); font-size: 10px; white-space: nowrap; }
+    .sens-green { background: rgba(16,185,129,.18); color: var(--ok); }
+    .sens-yellow { background: rgba(245,158,11,.18); color: var(--am); }
+    .sens-orange { background: rgba(251,146,60,.2); color: #FB923C; }
+    .sens-red { background: rgba(239,68,68,.18); color: var(--re); }
+
+    /* ── RATIOS ── */
+    .ratio-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(26,58,85,.5); }
+    .ratio-row:last-child { border-bottom: none; }
+    .ratio-label { font-size: 13px; color: var(--g); }
+    .ratio-val { font-family: "Oswald", sans-serif; font-size: 18px; font-weight: 700; }
+    .ratio-note { font-size: 11px; color: var(--g3); margin-top: 2px; }
+    .ratio-ok { color: var(--ok); }
+    .ratio-warn { color: var(--am); }
+    .ratio-bad { color: var(--re); }
+
+    /* ── BREAK CONDITIONS ── */
+    .break-item { padding: 12px 14px; background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2); border-radius: 8px; margin-bottom: 10px; }
+    .break-item.ok { background: rgba(16,185,129,.06); border-color: rgba(16,185,129,.2); }
+    .break-label { font-family: "Oswald", sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+    .break-desc { font-size: 12px; color: var(--g2); line-height: 1.5; }
+
+    /* ── SUMMARY ── */
+    .summary { background: var(--n2); border: 1px solid var(--n3); border-radius: 8px; padding: 20px; }
+    .sumtag { font-family: "Oswald", sans-serif; font-size: 10px; font-weight: 700; color: var(--t); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+    .sumtxt { font-size: 13px; color: var(--g); line-height: 1.8; }
+
+    /* ── SCORECARD (privacy-safe for sharing) ── */
+    .scorecard {
+      background: linear-gradient(180deg, #0d2238 0%, #0b1e33 100%);
+      border: 1px solid rgba(32,201,183,.35); border-radius: 18px;
+      padding: 18px; max-width: 700px;
+    }
+    .scorecard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .scorecard-brand { display: flex; align-items: center; gap: 10px; }
+    .scorecard-title { font-family: "Oswald", sans-serif; font-size: 18px; letter-spacing: 1.2px; color: var(--t); }
+    .scorecard-tag { color: var(--g2); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 3px; }
+    .scorecard-score { text-align: right; }
+    .scorecard-score .num { font-family: "Oswald", sans-serif; font-size: 44px; line-height: .9; }
+    .scorecard-score .den { font-size: 12px; color: var(--g2); font-family: "Oswald", sans-serif; letter-spacing: 1px; }
+    .scorecard-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    .scorecard-item { background: rgba(15,42,68,.94); border: 1px solid rgba(34,72,103,.7); border-radius: 12px; padding: 12px; }
+    .scorecard-item .k { font-size: 10px; color: var(--g2); font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; margin-bottom: 5px; }
+    .scorecard-item .v { color: #F6FBFE; font-size: 14px; font-weight: 700; line-height: 1.45; }
+    .scorecard-radar-wrap { margin-top: 14px; background: rgba(15,42,68,.94); border: 1px solid rgba(34,72,103,.7); border-radius: 12px; padding: 12px; }
+    .scorecard-radar-title { font-size: 10px; color: var(--g2); font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; margin-bottom: 8px; }
+    .scorecard-radar-canvas { position: relative; height: 220px; }
+
+    /* ── ACTION BAR ── */
+    .abar {
+      padding: 22px 20px; display: flex; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--n3);
+      background: var(--n2); border-radius: 0 0 16px 16px;
+    }
+    .copybox {
+      background: var(--n); border: 1px solid var(--n3); color: var(--g2); padding: 12px 14px; border-radius: 10px; width: 100%;
+      font-size: 12px; line-height: 1.65; white-space: pre-wrap; margin-top: 16px;
+    }
+
+    /* ── TOOLTIPS ── */
+    .tip-target { position: relative; cursor: help; }
+    .tooltipbox {
+      position: fixed; z-index: 100; max-width: 320px; display: none;
+      background: rgba(11,30,51,.98); border: 1px solid rgba(32,201,183,.25);
+      border-radius: 12px; box-shadow: var(--shadow); padding: 12px 12px 10px; pointer-events: none;
+    }
+    .tooltipbox.show { display: block; }
+    .tt-title { font-family: "Oswald", sans-serif; font-size: 11px; color: var(--t); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 6px; }
+    .tt-copy { font-size: 12px; color: var(--g2); line-height: 1.55; }
+    .tt-copy strong { color: #fff; }
+
+    /* ── MODAL ── */
+    .modalbg {
+      position: fixed; inset: 0; background: rgba(2,10,18,.7); backdrop-filter: blur(5px);
+      display: none; align-items: flex-end; justify-content: center; padding: 14px; z-index: 50;
+    }
+    .modalbg.show { display: flex; }
+    .modal {
+      width: 100%; max-width: 760px; max-height: 88vh; overflow: auto;
+      background: linear-gradient(180deg, rgba(15,42,68,.98), rgba(12,33,53,.98));
+      border: 1px solid var(--n3); border-radius: 18px 18px 14px 14px; box-shadow: var(--shadow); padding: 18px;
+    }
+    .modalhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .iconbtn {
+      appearance: none; border: 1px solid var(--n3); background: rgba(11,30,51,.9); color: var(--g2);
+      border-radius: 10px; padding: 8px 10px; cursor: pointer; font-weight: 800;
+    }
+    .mgrid { display: grid; gap: 12px; }
+    .mcard { background: rgba(11,30,51,.88); border: 1px solid var(--n3); border-radius: 14px; padding: 14px; }
+    .mcardt { font-size: 12px; color: var(--t); letter-spacing: 1px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
+    .mcardc { color: var(--g2); font-size: 13px; line-height: 1.55; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(20px);
+      background: rgba(11,30,51,.96); border: 1px solid rgba(32,201,183,.35); color: #fff;
+      padding: 12px 14px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+      transition: .28s ease; font-size: 13px; z-index: 60; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .conditional-hidden { display: none !important; }
+    .footer-note { text-align: center; color: var(--g3); font-size: 12px; line-height: 1.5; margin-top: 18px; padding: 0 8px; }
+    .site-footer { text-align: center; padding: 24px 16px 32px; border-top: 1px solid rgba(26,58,85,.4); margin-top: 32px; }
+    .site-footer a { color: var(--g3); text-decoration: none; font-size: 11px; font-family: 'Oswald', sans-serif; letter-spacing: .05em; text-transform: uppercase; transition: color .2s; }
+    .site-footer a:hover { color: var(--t); }
+    .site-footer .sep { color: var(--g3); opacity: .5; margin: 0 10px; }
+    .site-footer .copy { display: block; margin-top: 8px; color: var(--g3); font-size: 10px; opacity: .6; }
+    .tiny { color: var(--g3); font-size: 12px; line-height: 1.55; margin-top: 12px; }
+    .hidden { display: none !important; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:740px) {
+      .g2, .g3, .cgrid, .rgrid { grid-template-columns: 1fr; }
+      .mrow { grid-template-columns: 1fr 1fr; }
+      .scorecard-grid { grid-template-columns: 1fr; }
+      .app { padding: 16px 14px 60px; }
+      .topbar { margin: 0 -14px 18px; padding: 14px 14px 12px; }
+      .vhdr, .vbody, .abar { padding-left: 16px; padding-right: 16px; }
+      .sens-table { font-size: 10px; }
+      .sens-table th, .sens-table td { padding: 5px 3px; }
+    }
+    @media(min-width:741px) {
+      .app { padding: 22px 20px 80px; }
+      .topbar { margin: 0 -20px 22px; padding: 16px 20px 14px; }
+      .hero { padding: 28px 26px; }
+      .panel { padding: 24px; }
+      .g2, .cgrid, .rgrid, .scorecard-grid { grid-template-columns: 1fr 1fr; }
+      .g3 { grid-template-columns: 1fr 1fr 1fr; }
+      .modalbg { align-items: center; }
+      .modal { border-radius: 18px; }
+      h1 { font-size: 44px; }
+      h2 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- ═══ TOPBAR ═══ -->
+  <div class="topbar">
+    <div class="brandrow">
+      <div class="brand">
+        <svg class="logo-svg" width="42" height="42" viewBox="0 0 42 42" fill="none" aria-label="B-Box logo">
+          <rect width="42" height="42" rx="12" fill="url(#lg)"/>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="42" y2="42"><stop stop-color="#20C9B7"/><stop offset="1" stop-color="#17A090"/></linearGradient></defs>
+          <text x="21" y="29" text-anchor="middle" font-family="Oswald,sans-serif" font-size="24" font-weight="700" fill="#0B1E33">B</text>
+        </svg>
+        <div>
+          <div class="brandname">B-BOX</div>
+          <div class="brandtag">Deal Intelligence for Frontier Markets</div>
+        </div>
+      </div>
+      <div class="badge">v2.0 MVP</div>
+    </div>
+    <div class="progress">
+      <div class="pbar">
+        <div class="pseg on" id="ps1"></div>
+        <div class="pseg" id="ps2"></div>
+        <div class="pseg" id="ps3"></div>
+        <div class="pseg" id="ps4"></div>
+      </div>
+      <div class="plabel" id="progressLabel">Step 1 of 4 &middot; Entry</div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 1: HERO ═══ -->
+  <section class="screen active" data-step="1">
+    <div class="hero">
+      <div class="eyebrow">Frontier pre-investment stress test</div>
+      <h1>Stress-test your project before capital moves.</h1>
+      <p class="lead">B-Box builds a 5-year DCF cash flow model from your inputs, then systematically stresses it against 7 frontier realities. Every score point traces back to a computed financial impact — no arbitrary penalties.</p>
+      <div class="bullets">
+        <div class="bullet"><strong>For investors:</strong> Get a structured first-pass signal before wiring money into a deal.</div>
+        <div class="bullet"><strong>For founders:</strong> See what breaks first — before a bank, investor, or committee does.</div>
+        <div class="bullet"><strong>For sharing:</strong> Privacy-safe scorecard shows verdict without exposing sensitive financials.</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="goToStep(2)">Start assessment</button>
+        <button class="btn btn-secondary" onclick="openMethodology()">How it works</button>
+      </div>
+    </div>
+    <div class="footer-note">Built for fast clarity, not false precision. The score is a transparent frontier stress signal, not investment advice.</div>
+  </section>
+
+  <!-- ═══ STEP 2: PROJECT CONTEXT ═══ -->
+  <section class="screen" data-step="2">
+    <div class="panel">
+      <div class="eyebrow">Step 2 &middot; Project Context</div>
+      <h2>Project basics</h2>
+      <p class="sectionsub">Keep this light. The goal is context, not a full memo.</p>
+      <div class="fields" style="margin-top:18px">
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="projectName">Project name</label></div>
+            <input id="projectName" type="text" placeholder="Optional" />
+            <div class="hint">Used only in the scorecard. Safe to leave blank.</div>
+          </div>
+          <div>
+            <div class="labelrow"><label for="projectType">Project type</label></div>
+            <select id="projectType">
+              <option value="">Choose one</option>
+              <option>Greenfield</option><option>Expansion</option><option>Diversification</option><option>Import substitution</option><option>Export-oriented</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="sector">Sector</label></div>
+            <select id="sector">
+              <option value="">Choose sector</option>
+              <option>Manufacturing</option><option>Agri-processing</option><option>Energy</option><option>Logistics</option><option>Healthcare</option><option>FMCG</option><option>Real estate</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <div class="labelrow"><label for="country">Country</label></div>
+            <select id="country">
+              <option value="">Choose country</option>
+              <option>Ethiopia</option><option>Kenya</option><option>Rwanda</option><option>Nigeria</option><option>Tanzania</option><option>Uganda</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="labelrow"><label for="projectDesc">Short description</label></div>
+          <textarea id="projectDesc" placeholder="Optional. Example: edible oil refinery targeting import substitution with 70% imported line equipment."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
+        <button class="btn btn-primary" onclick="validateStep2()">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ STEP 3: FINANCIAL INPUTS ═══ -->
+  <section class="screen" data-step="3">
+    <div class="panel">
+      <div class="eyebrow">Step 3 &middot; Financial Inputs</div>
+      <h2>Project financials &amp; frontier assumptions</h2>
+      <p class="sectionsub">Enter the minimum inputs needed for B-Box to compute Base IRR, then stress it for frontier conditions.</p>
+
+      <div class="fields" style="margin-top:18px">
+        <!-- INVESTMENT -->
+        <div class="section-divider">Investment</div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="capex">Total Capex (USD)</label><span class="help" data-tip="Total upfront capital expenditure including equipment, construction, installation, and pre-operating costs.">?</span></div>
+            <input id="capex" type="number" min="0" step="1" placeholder="e.g. 2500000" />
+          </div>
+          <div>
+            <div class="labelrow"><label for="importShare">Imported capex share (%)</label><span class="help" data-tip="Percentage of total capex denominated in foreign currency. Higher means more FX exposure.">?</span></div>
+            <input id="importShare" type="number" min="0" max="100" step="1" placeholder="e.g. 60" />
+          </div>
+        </div>
+
+        <!-- OPERATIONS -->
+        <div class="section-divider">Operations</div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="annualRevenue">Annual revenue at full capacity (USD)</label><span class="help" data-tip="Expected annual revenue if running at 100% capacity. B-Box will apply your utilization rate to this figure.">?</span></div>
+            <input id="annualRevenue" type="number" min="0" step="1" placeholder="e.g. 3500000" />
+          </div>
+          <div>
+            <div class="labelrow"><label for="annualOpex">Annual operating cost at full capacity (USD)</label><span class="help" data-tip="Total annual operating costs at full capacity including materials, labor, utilities, and overheads. Excludes depreciation and debt service.">?</span></div>
+            <input id="annualOpex" type="number" min="0" step="1" placeholder="e.g. 2200000" />
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="utilization">Year 1 utilization (%)</label><span class="help" data-tip="Expected capacity utilization in Year 1. Frontier greenfields rarely exceed 60% in year 1.">?</span></div>
+            <input id="utilization" type="number" min="5" max="100" step="1" placeholder="e.g. 55" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="utilization" data-default-value="55"> Use realistic default (55%)</label>
+          </div>
+          <div>
+            <div class="labelrow"><label for="inflation">Inflation assumption (% p.a.)</label><span class="help" data-tip="Annual inflation rate. Used to escalate opex. Revenue only passes through 75% of inflation — the gap compounds.">?</span></div>
+            <input id="inflation" type="number" min="0" max="100" step="0.1" placeholder="e.g. 12" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="inflation" data-default-value="12"> Use realistic default (12%)</label>
+          </div>
+        </div>
+
+        <!-- FINANCING -->
+        <div class="section-divider">Financing</div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="financingMode">Project financing</label><span class="help" data-tip="If loan financed, B-Box will compute DSCR and equity IRR after debt service.">?</span></div>
+            <select id="financingMode" onchange="toggleFinancingFields()">
+              <option value="" disabled selected>Choose one</option>
+              <option value="equity">Equity only (no loan)</option>
+              <option value="debt">Loan financed</option>
+            </select>
+          </div>
+          <div id="debtShareWrap" class="conditional-hidden">
+            <div class="labelrow"><label for="debtShare">Debt share of capex (%)</label><span class="help" data-tip="What percentage of total capex is financed by debt. Typical range: 50-70%.">?</span></div>
+            <input id="debtShare" type="number" min="0" max="100" step="1" placeholder="e.g. 60" />
+          </div>
+        </div>
+        <div id="financingFields" class="g2 conditional-hidden">
+          <div>
+            <div class="labelrow"><label for="loanRate">Loan interest rate (% p.a.)</label></div>
+            <input id="loanRate" type="number" min="0" max="100" step="0.1" placeholder="e.g. 14" />
+          </div>
+          <div>
+            <div class="labelrow"><label for="loanYears">Loan payback period (years)</label></div>
+            <input id="loanYears" type="number" min="1" max="30" step="1" placeholder="e.g. 7" />
+          </div>
+        </div>
+
+        <!-- FRONTIER CONDITIONS -->
+        <div class="section-divider">Frontier Conditions</div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="fxGap">FX rate realism</label><span class="help" data-tip="How realistic is your FX rate assumption compared to the accessible market rate? Very optimistic = 25% capex overrun on imported portion. Slightly optimistic = 12%.">?</span></div>
+            <select id="fxGap">
+              <option value="" disabled selected>Choose one</option>
+              <option value="realistic">Close to current accessible reality</option>
+              <option value="slightly_low">Slightly optimistic</option>
+              <option value="very_low">Very optimistic (far below reality)</option>
+              <option value="unknown">Not sure</option>
+            </select>
+          </div>
+          <div>
+            <div class="labelrow"><label for="fxDelay">FX access delay (days)</label><span class="help" data-tip="Expected days to access foreign currency for imports. In Ethiopia can be 180+ days; in Kenya often under 30.">?</span></div>
+            <input id="fxDelay" type="number" min="0" max="365" step="1" placeholder="e.g. 90" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="fxDelay" data-default-value="90"> Use default (90 days)</label>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="customsDays">Customs / clearance delay (days)</label><span class="help" data-tip="Expected total days for customs and clearance. Includes port dwell time, inspections, and inland transport.">?</span></div>
+            <input id="customsDays" type="number" min="0" max="365" step="1" placeholder="e.g. 60" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="customsDays" data-default-value="60"> Use default (60 days)</label>
+          </div>
+          <div>
+            <div class="labelrow"><label for="backupPower">Backup power provision</label><span class="help" data-tip="Affects revenue reliability. No backup = 12% revenue loss (downtime + efficiency). Partial = 5%. Full = 0%.">?</span></div>
+            <select id="backupPower">
+              <option value="" disabled selected>Choose one</option>
+              <option value="full">Yes, fully provisioned and costed</option>
+              <option value="partial">Partial backup or unclear costing</option>
+              <option value="none">No meaningful backup provision</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="maintenance">Maintenance reserve (% of capex/yr)</label><span class="help" data-tip="Annual maintenance budget as percentage of capex. Frontier benchmark is 7-10%. Below 5% triggers additional opex stress.">?</span></div>
+            <input id="maintenance" type="number" min="0" max="30" step="0.1" placeholder="e.g. 6" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="maintenance" data-default-value="6"> Use default (6%)</label>
+          </div>
+          <div>
+            <div class="labelrow"><label for="foreignTech">Foreign technical dependency</label><span class="help" data-tip="High dependency on foreign specialists adds 7% revenue reduction from commissioning delays and retention issues.">?</span></div>
+            <select id="foreignTech">
+              <option value="" disabled selected>Choose one</option>
+              <option value="none">No major foreign technical dependency</option>
+              <option value="some">Some foreign specialists required</option>
+              <option value="high">High dependency on foreign specialists</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div>
+            <div class="labelrow"><label for="workingCapital">Working capital (months of opex)</label><span class="help" data-tip="How many months of operating costs are covered by working capital. Should exceed clearance months + 2 for buffer.">?</span></div>
+            <input id="workingCapital" type="number" min="0" max="24" step="0.1" placeholder="e.g. 4" />
+            <label class="use-default"><input class="checkbox" type="checkbox" data-default-target="workingCapital" data-default-value="4"> Use default (4 months)</label>
+          </div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="goToStep(2)">Back</button>
+        <button class="btn btn-primary" onclick="validateStep3()">Run stress test</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ STEP 4: RESULTS ═══ -->
+  <section class="screen" data-step="4">
+    <div class="panel" style="padding:0; overflow:hidden;">
+      <div id="loadingView" class="loading">
+        <div class="spin"></div>
+        <h2>Running frontier stress test</h2>
+        <p class="sectionsub">Building DCF model and computing stressed IRRs…</p>
+        <div class="loadingsteps" id="loadingSteps">
+          <div class="loadingitem"><strong>Building 5-year DCF model</strong><span class="status" id="ls1">computing</span></div>
+          <div class="loadingitem"><strong>Computing base IRR</strong><span class="status" id="ls2">queued</span></div>
+          <div class="loadingitem"><strong>Stressing 7 frontier variables</strong><span class="status" id="ls3">queued</span></div>
+          <div class="loadingitem"><strong>Building sensitivity matrix</strong><span class="status" id="ls4">queued</span></div>
+          <div class="loadingitem"><strong>Computing waterfall impacts</strong><span class="status" id="ls5">queued</span></div>
+          <div class="loadingitem"><strong>Generating verdict</strong><span class="status" id="ls6">queued</span></div>
+        </div>
+      </div>
+
+      <div id="resultView" style="display:none">
+        <div class="vhdr">
+          <div class="vtop">
+            <div>
+              <div class="vmeta" id="vmeta"></div>
+              <div class="vname" id="vname"></div>
+              <div class="vbadge" id="vbadge"></div>
+              <div class="maturity">Model maturity: v2.0 — financially-grounded rule engine</div>
+              <div class="actions" style="margin-top:12px">
+                <button class="btn btn-secondary btn-sm" onclick="openMethodology()">How the score is calculated</button>
+              </div>
+            </div>
+            <div class="sblock">
+              <div class="snum" id="snum">0</div>
+              <div class="slabel">B-Box score / 100</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input warnings banner (populated by renderResults) -->
+        <div id="inputWarningsBanner" style="display:none; margin:0 16px 12px; padding:10px 14px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); border-radius:8px; font-size:12px; color:#F59E0B; line-height:1.5;"></div>
+
+        <div class="mrow">
+          <div class="mc tip-target" data-tooltip="baseIrr"><div class="mv" id="mIRR"></div><div class="ml">Base IRR</div><div class="mn">At stated utilization</div></div>
+          <div class="mc tip-target" data-tooltip="stressedIrr"><div class="mv" id="mAdj"></div><div class="ml">Stressed IRR</div><div class="mn">All 7 stresses applied</div></div>
+          <div class="mc tip-target" data-tooltip="erosion"><div class="mv" id="mGap"></div><div class="ml">Return Erosion</div><div class="mn">Percentage points lost</div></div>
+          <div class="mc tip-target" data-tooltip="breakeven"><div class="mv" id="mBE"></div><div class="ml">Break-even Util.</div><div class="mn">Min to cover costs</div></div>
+        </div>
+
+        <div class="vbody">
+          <!-- Radar Chart -->
+          <div class="vsec">
+            <div class="vtitle">Frontier risk profile</div>
+            <div class="cgrid">
+              <div class="ccard">
+                <div class="ctitle">Variable scores</div>
+                <div class="chartwrap"><canvas id="radarChart"></canvas></div>
+              </div>
+              <div class="ccard">
+                <div class="ctitle">IRR waterfall — cumulative stress</div>
+                <div class="chartwrap"><canvas id="waterfallChart"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cash Burn Timeline -->
+          <div class="vsec">
+            <div class="vtitle">5-year cash flow projection</div>
+            <div class="ccard">
+              <div class="ctitle">Base vs Stressed cash flows (USD)</div>
+              <div class="chartwrap"><canvas id="cashFlowChart"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Sensitivity Matrix -->
+          <div class="vsec">
+            <div class="vtitle">Sensitivity matrix — recomputed IRR at each cell</div>
+            <div class="ccard" style="overflow-x:auto">
+              <div class="ctitle">Revenue shock (cols) × Opex shock (rows) → IRR</div>
+              <div id="sensitivityMatrix"></div>
+            </div>
+          </div>
+
+          <!-- Ratios -->
+          <div class="vsec">
+            <div class="vtitle">Key ratios</div>
+            <div class="ccard" id="ratiosSection"></div>
+          </div>
+
+          <!-- Break Conditions -->
+          <div class="vsec">
+            <div class="vtitle">Break conditions</div>
+            <div id="breakConditions"></div>
+          </div>
+
+          <!-- Variable Breakdown -->
+          <div class="vsec">
+            <div class="vtitle">Variable-by-variable breakdown</div>
+            <div id="variableBreakdown"></div>
+          </div>
+
+          <!-- Verdict Summary -->
+          <div class="vsec">
+            <div class="vtitle">Verdict summary</div>
+            <div class="summary">
+              <div class="sumtag">Assessment</div>
+              <div class="sumtxt" id="verdictSummary"></div>
+            </div>
+          </div>
+
+          <!-- Shareable Scorecard -->
+          <div class="vsec">
+            <div class="vtitle">Shareable scorecard (privacy-safe)</div>
+            <div id="scorecardContainer"></div>
+          </div>
+        </div>
+
+        <div class="abar">
+          <button class="btn btn-primary btn-sm" onclick="downloadScorecard()">Download scorecard</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyLinkedIn()">Copy LinkedIn text</button>
+          <button class="btn btn-secondary btn-sm" onclick="getDeepDive()">Connect for deep dive</button>
+          <button class="btn btn-secondary btn-sm" onclick="editInputs()">Edit inputs</button>
+          <button class="btn btn-secondary btn-sm" onclick="runAnother()">Run another</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- TOOLTIP ELEMENT -->
+<div class="tooltipbox" id="tooltipBox">
+  <div class="tt-title" id="ttTitle"></div>
+  <div class="tt-copy" id="ttCopy"></div>
+</div>
+
+<!-- METHODOLOGY MODAL -->
+<div class="modalbg" id="methodologyModal">
+  <div class="modal">
+    <div class="modalhead">
+      <div>
+        <div class="eyebrow">Methodology</div>
+        <h3>How the score is calculated</h3>
+      </div>
+      <button class="iconbtn" onclick="closeMethodology()">✕</button>
+    </div>
+    <p class="mcardc" style="margin-bottom:14px">B-Box v2 uses a single, unified engine. There are no arbitrary lookup tables. Every score point traces back to a computed financial impact through a 5-year DCF cash flow model.</p>
+    <div class="mgrid">
+      <div class="mcard">
+        <div class="mcardt">Step 1: Build DCF Model</div>
+        <div class="mcardc">A 5-year discounted cash flow model is built from your inputs: capex, revenue, opex, utilization path, inflation, and financing structure. Base IRR is computed at your stated utilization — not 100%.</div>
+      </div>
+      <div class="mcard">
+        <div class="mcardt">Step 2: Stress Each Variable</div>
+        <div class="mcardc">For each of the 7 frontier variables, a stressed IRR is computed where only that variable's stress is applied. The IRR drop measures its true financial impact.</div>
+      </div>
+      <div class="mcard">
+        <div class="mcardt">Step 3: Score from IRR Impact</div>
+        <div class="mcardc">Each variable is scored on an S-curve (sigmoid) based on how much IRR it erodes vs the expected maximum. The curve provides graduated diagnostic signal — small drops barely dent the score, extreme drops push it toward the floor. If the base project is already unprofitable, a continuous penalty degrades all scores further. The composite is the weighted sum.</div>
+      </div>
+      <div class="mcard">
+        <div class="mcardt">The 7 Variables &amp; Weights</div>
+        <div class="mcardc">
+          <strong>FX Realism</strong> (25%) — capex overrun from FX gap on imported portion<br>
+          <strong>Logistics &amp; Delays</strong> (18%) — customs + FX delay reduces Year 1 operating months<br>
+          <strong>Power Infrastructure</strong> (15%) — revenue loss from inadequate backup power<br>
+          <strong>Inflation Trajectory</strong> (15%) — opex-revenue gap that compounds over 5 years<br>
+          <strong>Working Capital</strong> (12%) — coverage adequacy vs clearance + buffer months<br>
+          <strong>Maintenance Reserve</strong> (8%) — shortfall vs frontier benchmark hits opex<br>
+          <strong>Technical Dependency</strong> (7%) — commissioning delays &amp; retention issues reduce revenue
+        </div>
+      </div>
+      <div class="mcard">
+        <div class="mcardt">Country Context</div>
+        <div class="mcardc">Country modifiers adjust the stress parameters — not the scores. Ethiopia adds FX overrun and customs delay. Nigeria adds FX and inflation stress. Kenya and Rwanda reduce customs delays. Tanzania and Uganda use baseline.</div>
+      </div>
+      <div class="mcard">
+        <div class="mcardt">Sensitivity Matrix</div>
+        <div class="mcardc">The 5×5 matrix recomputes the full cash flow model at each cell with revenue and opex shocks applied. No linear approximation — each cell is a fresh IRR computation.</div>
+      </div>
+    </div>
+    <div class="tiny">B-Box v2.0 is a pre-investment stress-test tool, not financial advice. All computations are client-side — no data leaves your browser.</div>
+  </div>
+</div>
+
+<!-- SITE FOOTER -->
+<footer class="site-footer">
+  <a href="#" onclick="openPrivacy(); return false;">Privacy Policy</a>
+  <span class="sep">|</span>
+  <a href="#" onclick="openTerms(); return false;">Terms of Use</a>
+  <span class="sep">|</span>
+  <a href="https://www.linkedin.com/in/amir-kelifa-aaa47a195" target="_blank" rel="noopener">Contact</a>
+  <span class="copy">© 2026 B-Box. All rights reserved. Built by Amir Kelifa.</span>
+</footer>
+
+<!-- PRIVACY POLICY MODAL -->
+<div class="modalbg" id="privacyModal">
+  <div class="modal">
+    <div class="modalhead">
+      <div>
+        <div class="eyebrow">Legal</div>
+        <h3>Privacy Policy</h3>
+      </div>
+      <button class="iconbtn" onclick="closePrivacy()">✕</button>
+    </div>
+    <div style="color:var(--g2); font-size:13px; line-height:1.7;">
+      <p><strong>Effective Date:</strong> April 7, 2026</p>
+      <p><strong>B-Box (“the Tool”)</strong> is committed to protecting your privacy. This policy explains how we handle information when you use our frontier market pre-investment stress test.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">1. Data Collection</h4>
+      <p><strong>No financial data is collected, stored, or transmitted.</strong> All computations run entirely in your browser (client-side). Your project inputs, financial figures, and results never leave your device. We do not have access to any data you enter into the tool.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">2. Analytics</h4>
+      <p>We use PostHog, a privacy-focused analytics platform, to collect anonymous usage data such as: pages visited, features used (e.g. which step you reach, whether you download a scorecard), device type, and country of access. This helps us improve the tool. <strong>No personally identifiable information (PII) is collected.</strong> No names, emails, financial inputs, or project details are tracked.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">3. Cookies</h4>
+      <p>PostHog may use a first-party cookie to distinguish unique visitors. No third-party advertising cookies are used. You can block cookies in your browser settings without affecting the tool’s functionality.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">4. Third-Party Services</h4>
+      <p>The tool loads external resources from Google Fonts (typography), Chart.js (visualizations), and html2canvas (scorecard export). These services may log standard web requests (IP address, browser type). We do not control their data practices.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">5. Data Security</h4>
+      <p>Since no user data is transmitted to our servers, there is no data to secure on our end. Your financial inputs exist only in your browser’s memory and are discarded when you close the page.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">6. Contact</h4>
+      <p>For privacy-related questions, contact Amir Kelifa at <a href="mailto:akelifa5@gmail.com" style="color:var(--t);">akelifa5@gmail.com</a>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TERMS OF USE MODAL -->
+<div class="modalbg" id="termsModal">
+  <div class="modal">
+    <div class="modalhead">
+      <div>
+        <div class="eyebrow">Legal</div>
+        <h3>Terms of Use</h3>
+      </div>
+      <button class="iconbtn" onclick="closeTerms()">✕</button>
+    </div>
+    <div style="color:var(--g2); font-size:13px; line-height:1.7;">
+      <p><strong>Effective Date:</strong> April 7, 2026</p>
+      <p>By using B-Box (“the Tool”), you agree to the following terms.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">1. Nature of the Tool</h4>
+      <p>B-Box is a <strong>pre-investment stress-test tool</strong> designed for educational and analytical purposes. It provides a structured signal based on the inputs you provide. <strong>It is not financial advice, investment advice, or a substitute for professional due diligence.</strong></p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">2. No Warranty</h4>
+      <p>The Tool is provided “as is” without warranty of any kind, express or implied. The scores, verdicts, and analyses are based on simplified financial models and should not be the sole basis for any investment decision. Results depend entirely on the accuracy and completeness of inputs you provide.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">3. Limitation of Liability</h4>
+      <p>Under no circumstances shall B-Box, its creator, or affiliates be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising from your use of this Tool. This includes, without limitation, loss of profits, data, or investment capital.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">4. User Responsibility</h4>
+      <p>You are solely responsible for verifying the accuracy of inputs and for any decisions made based on the Tool’s output. Always consult qualified financial, legal, and technical professionals before making investment decisions.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">5. Intellectual Property</h4>
+      <p>The B-Box methodology, scoring engine, interface design, and brand are the intellectual property of Amir Kelifa. You may share results and scorecards for personal and professional use. You may not reverse-engineer, copy, or redistribute the Tool’s source code without written permission.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">6. MVP Status</h4>
+      <p>B-Box v2.0 is a minimum viable product under active development. Features, scoring methodology, and variable weights may change without notice as the model is refined with real-world data and user feedback.</p>
+      <h4 style="color:var(--t); margin:16px 0 6px; font-family:Oswald,sans-serif; font-size:14px;">7. Contact</h4>
+      <p>For questions about these terms, contact Amir Kelifa at <a href="mailto:akelifa5@gmail.com" style="color:var(--t);">akelifa5@gmail.com</a>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// B-BOX v2 — UNIFIED FINANCIAL ENGINE
+// ══════════════════════════════════════════════════
+
+// ── NAVIGATION ──
+let currentStep = 1;
+const stepLabels = ['Entry', 'Project Context', 'Financial Inputs', 'Results'];
+
+function goToStep(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelector(`[data-step="${n}"]`).classList.add('active');
+  currentStep = n;
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Analytics: track step navigation
+  if (window.posthog) posthog.capture('step_navigated', { step: n, step_label: stepLabels[n - 1] });
+}
+
+function updateProgress() {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('ps' + i);
+    el.className = 'pseg';
+    if (i < currentStep) el.classList.add('done');
+    else if (i === currentStep) el.classList.add('on');
+  }
+  document.getElementById('progressLabel').textContent = `Step ${currentStep} of 4 · ${stepLabels[currentStep - 1]}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── FORM HELPERS ──
+function toggleFinancingFields() {
+  const mode = document.getElementById('financingMode').value;
+  const isDebt = mode === 'debt';
+  document.getElementById('financingFields').classList.toggle('conditional-hidden', !isDebt);
+  document.getElementById('debtShareWrap').classList.toggle('conditional-hidden', !isDebt);
+}
+
+// Default checkboxes
+document.querySelectorAll('[data-default-target]').forEach(cb => {
+  cb.addEventListener('change', function() {
+    const target = document.getElementById(this.dataset.defaultTarget);
+    if (this.checked) {
+      target.value = this.dataset.defaultValue;
+      target.dispatchEvent(new Event('input'));
+    }
+  });
+});
+
+// Help tooltips
+document.addEventListener('click', function(e) {
+  const help = e.target.closest('.help');
+  if (help) {
+    e.stopPropagation();
+    const tip = help.dataset.tip;
+    const box = document.getElementById('tooltipBox');
+    document.getElementById('ttTitle').textContent = 'Info';
+    document.getElementById('ttCopy').innerHTML = tip;
+    const rect = help.getBoundingClientRect();
+    box.style.top = (rect.bottom + 8) + 'px';
+    box.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
+    box.classList.add('show');
+    setTimeout(() => box.classList.remove('show'), 4000);
+  } else {
+    document.getElementById('tooltipBox').classList.remove('show');
+  }
+});
+
+// ── VALIDATION ──
+function validateStep2() {
+  const sector = document.getElementById('sector').value;
+  const country = document.getElementById('country').value;
+  const ptype = document.getElementById('projectType').value;
+  if (!sector || !country || !ptype) {
+    showToast('Please select sector, country, and project type.');
+    return;
+  }
+  goToStep(3);
+}
+
+function validateStep3() {
+  const fields = [
+    { id: 'capex', name: 'Total Capex' },
+    { id: 'annualRevenue', name: 'Annual Revenue' },
+    { id: 'annualOpex', name: 'Annual Opex' },
+    { id: 'utilization', name: 'Year 1 Utilization' },
+    { id: 'inflation', name: 'Inflation' },
+    { id: 'fxGap', name: 'FX Rate Realism' },
+    { id: 'fxDelay', name: 'FX Delay' },
+    { id: 'customsDays', name: 'Customs Days' },
+    { id: 'backupPower', name: 'Backup Power' },
+    { id: 'maintenance', name: 'Maintenance Reserve' },
+    { id: 'foreignTech', name: 'Foreign Tech Dependency' },
+    { id: 'financingMode', name: 'Financing Mode' },
+    { id: 'workingCapital', name: 'Working Capital' },
+    { id: 'importShare', name: 'Imported Capex Share (%)' },
+  ];
+  for (const f of fields) {
+    const el = document.getElementById(f.id);
+    const val = el.value;
+    if (!val || val === '') {
+      showToast(`Please fill in: ${f.name}`);
+      el.focus();
+      return;
+    }
+  }
+  const fm = document.getElementById('financingMode').value;
+  if (fm === 'debt') {
+    const lr = document.getElementById('loanRate').value;
+    const ly = document.getElementById('loanYears').value;
+    const ds = document.getElementById('debtShare').value;
+    if (!lr || !ly || !ds) {
+      showToast('Please fill in debt share, loan rate, and payback period.');
+      return;
+    }
+  }
+  // FIX B: Input sanity warnings (non-blocking)
+  const capexVal = parseFloat(document.getElementById('capex').value) || 0;
+  const revVal = parseFloat(document.getElementById('annualRevenue').value) || 0;
+  const opexVal = parseFloat(document.getElementById('annualOpex').value) || 0;
+  const warnings = [];
+  if (capexVal > 0 && revVal / capexVal > 5) warnings.push(`Revenue/Capex ratio is ${(revVal/capexVal).toFixed(1)}x — unusually high. Make sure revenue is at full capacity, not Year 1.`);
+  if (capexVal > 0 && revVal / capexVal < 0.3) warnings.push(`Revenue/Capex ratio is ${(revVal/capexVal).toFixed(2)}x — very low revenue relative to investment.`);
+  if (revVal > 0 && opexVal / revVal > 0.90) warnings.push(`Opex is ${(opexVal/revVal*100).toFixed(0)}% of revenue — extremely thin margins. Verify operating costs.`);
+  if (capexVal < 50000 && capexVal > 0) warnings.push('Investment under $50K — B-Box is designed for larger capital projects.');
+  if (warnings.length > 0) {
+    showToast('⚠ ' + warnings[0]);
+    // Store for results display
+    window._inputWarnings = warnings;
+  } else {
+    window._inputWarnings = [];
+  }
+  goToStep(4);
+  runStressTest();
+}
+
+// ═══════════════════════════════════════════════════
+// CORE FINANCIAL ENGINE
+// ═══════════════════════════════════════════════════
+
+// Country context modifiers
+const COUNTRY_MODS = {
+  'Ethiopia': { fxOverrun: 5, customsDelta: 15, powerDelta: 3, inflationDelta: 0 },
+  'Nigeria': { fxOverrun: 8, customsDelta: 0, powerDelta: 0, inflationDelta: 5 },
+  'Kenya': { fxOverrun: 0, customsDelta: -10, powerDelta: 0, inflationDelta: 0 },
+  'Rwanda': { fxOverrun: 0, customsDelta: -15, powerDelta: -2, inflationDelta: 0 },
+  'Tanzania': { fxOverrun: 0, customsDelta: 0, powerDelta: 0, inflationDelta: 0 },
+  'Uganda': { fxOverrun: 0, customsDelta: 0, powerDelta: 0, inflationDelta: 0 },
+  'Other': { fxOverrun: 0, customsDelta: 0, powerDelta: 0, inflationDelta: 0 },
+};
+
+// Variable definitions
+// Base maxDrop values — dynamically adjusted for leverage in getAdjustedVariables()
+const BASE_VARIABLES = [
+  { key: 'fx', name: 'FX Realism', weight: 0.25, maxDrop: 15 },
+  { key: 'logistics', name: 'Logistics & Delays', weight: 0.18, maxDrop: 12 },
+  { key: 'power', name: 'Power Infrastructure', weight: 0.15, maxDrop: 8 },
+  { key: 'inflation', name: 'Inflation Trajectory', weight: 0.15, maxDrop: 10 },
+  { key: 'wc', name: 'Working Capital', weight: 0.12, maxDrop: 8 },
+  { key: 'maintenance', name: 'Maintenance Reserve', weight: 0.08, maxDrop: 5 },
+  { key: 'technical', name: 'Technical Dependency', weight: 0.07, maxDrop: 8 },
+];
+
+// FIX BUG 1: Adjust maxDrop caps for high-leverage projects
+// High debt amplifies all IRR sensitivities, so maxDrop must scale
+function getAdjustedVariables(inputs) {
+  const leverageMultiplier = inputs.financingMode === 'debt'
+    ? 1 + Math.max(0, (inputs.debtShare - 0.5)) * 1.5  // >50% debt increases caps
+    : 1;
+  return BASE_VARIABLES.map(v => ({
+    ...v,
+    maxDrop: Math.round(v.maxDrop * leverageMultiplier * 10) / 10,
+  }));
+}
+var VARIABLES = BASE_VARIABLES; // default, overwritten per run
+
+function getInputs() {
+  const country = document.getElementById('country').value;
+  const cm = COUNTRY_MODS[country] || COUNTRY_MODS['Other'];
+
+  const capex = parseFloat(document.getElementById('capex').value) || 0;
+  const annualRevenue = parseFloat(document.getElementById('annualRevenue').value) || 0;
+  const annualOpex = parseFloat(document.getElementById('annualOpex').value) || 0;
+  const importSharePct = parseFloat(document.getElementById('importShare').value) || 50;
+  const userUtil = (parseFloat(document.getElementById('utilization').value) || 55) / 100;
+  const inflationRate = ((parseFloat(document.getElementById('inflation').value) || 12) + cm.inflationDelta) / 100;
+  const fxGap = document.getElementById('fxGap').value;
+  const fxDelay = parseFloat(document.getElementById('fxDelay').value) || 90;
+  const customsDays = Math.max(0, (parseFloat(document.getElementById('customsDays').value) || 60) + cm.customsDelta);
+  const backupPower = document.getElementById('backupPower').value;
+  const maintenancePct = (parseFloat(document.getElementById('maintenance').value) || 6) / 100;
+  const foreignTech = document.getElementById('foreignTech').value;
+  const wcMonths = parseFloat(document.getElementById('workingCapital').value) || 4;
+  const financingMode = document.getElementById('financingMode').value;
+  const debtShare = (parseFloat(document.getElementById('debtShare').value) || 60) / 100;
+  const loanRate = (parseFloat(document.getElementById('loanRate').value) || 14) / 100;
+  const loanYears = parseFloat(document.getElementById('loanYears').value) || 7;
+
+  return {
+    capex, annualRevenue, annualOpex, importSharePct: importSharePct / 100,
+    userUtil, inflationRate, fxGap, fxDelay, customsDays, backupPower,
+    maintenancePct, foreignTech, wcMonths, financingMode, debtShare,
+    loanRate, loanYears, country, countryMod: cm,
+    sector: document.getElementById('sector').value,
+    projectType: document.getElementById('projectType').value,
+    projectName: document.getElementById('projectName').value || 'Unnamed Project',
+  };
+}
+
+// ── STRESS PARAMETER COMPUTATION ──
+function computeStressParams(inputs, stressFlags) {
+  // stressFlags = { fx, logistics, power, inflation, wc, maintenance, technical }
+  // Each boolean — apply that stress or not
+  const s = {};
+  const cm = inputs.countryMod;
+
+  // FX: capex overrun on imported portion
+  if (stressFlags.fx) {
+    let overrunPct = 0;
+    if (inputs.fxGap === 'very_low') overrunPct = 0.25;
+    else if (inputs.fxGap === 'slightly_low') overrunPct = 0.12;
+    else if (inputs.fxGap === 'unknown') overrunPct = 0.15;
+    overrunPct += cm.fxOverrun / 100;
+    s.capexOverrun = inputs.capex * inputs.importSharePct * overrunPct;
+  } else {
+    s.capexOverrun = 0;
+  }
+
+  // Logistics: Year 1 operating months reduction
+  // FIX BUG 2: FX delay and customs often OVERLAP — not purely sequential
+  if (stressFlags.logistics) {
+    const longer = Math.max(inputs.customsDays, inputs.fxDelay);
+    const shorter = Math.min(inputs.customsDays, inputs.fxDelay);
+    const overlapFactor = 0.4; // 40% of the shorter delay overlaps with the longer
+    const effectiveDelayDays = longer + shorter * overlapFactor;
+    const totalDelayMonths = effectiveDelayDays / 30;
+    s.year1RevenueFactor = Math.max(0.25, (12 - totalDelayMonths) / 12);
+  } else {
+    s.year1RevenueFactor = 1;
+  }
+
+  // Power: revenue loss
+  // FIX BUG 5: When backup is fully provisioned, country delta impact is reduced
+  if (stressFlags.power) {
+    let powerLoss = 0;
+    if (inputs.backupPower === 'none') powerLoss = 0.12;
+    else if (inputs.backupPower === 'partial') powerLoss = 0.05;
+    // Full backup absorbs most of the country power risk
+    const countryPowerFactor = inputs.backupPower === 'full' ? 0.3
+      : inputs.backupPower === 'partial' ? 0.7 : 1.0;
+    powerLoss += (cm.powerDelta / 100) * countryPowerFactor;
+    powerLoss = Math.max(0, powerLoss);
+    s.powerRevenueLoss = powerLoss;
+  } else {
+    s.powerRevenueLoss = 0;
+  }
+
+  // Inflation: revenue pass-through depends on sector
+  // FIX BUG 3: Sector-aware inflation pass-through instead of hardcoded 75%
+  // Keys must match exact <select> option values from the form
+  const SECTOR_PASSTHROUGH = {
+    'Manufacturing': 0.85,       // Import-linked pricing, good pass-through
+    'Agri-processing': 0.70,     // Partial commodity pricing, moderate pass-through
+    'Energy': 0.90,              // Typically USD/tariff-linked
+    'Logistics': 0.75,           // Contract-based, moderate
+    'Healthcare': 0.72,          // Regulated pricing
+    'FMCG': 0.80,               // Consumer goods, decent pass-through
+    'Real estate': 0.78,         // Moderate, lease-indexed
+    'Other': 0.75,               // Default
+  };
+  s.inflationPassthrough = SECTOR_PASSTHROUGH[inputs.sector] || 0.75;
+  s.applyInflationStress = stressFlags.inflation;
+
+  // Working Capital: affects Year 0 outflow and potential cash shortfall
+  if (stressFlags.wc) {
+    const clearanceMonths = inputs.customsDays / 30;
+    const requiredWC = clearanceMonths + 2;
+    const wcCoverage = inputs.wcMonths / requiredWC;
+    // If underfunded, add penalty as additional capex (emergency funding cost)
+    if (wcCoverage < 1) {
+      const shortfallMonths = requiredWC - inputs.wcMonths;
+      const monthlyOpex = inputs.annualOpex / 12;
+      s.wcPenalty = shortfallMonths * monthlyOpex * 0.15; // 15% emergency premium
+    } else {
+      s.wcPenalty = 0;
+    }
+  } else {
+    s.wcPenalty = 0;
+  }
+
+  // Maintenance: shortfall vs benchmark hits opex
+  if (stressFlags.maintenance) {
+    const benchmark = 0.07; // 7% of capex
+    if (inputs.maintenancePct < 0.05) {
+      s.maintenanceOpexAddon = (benchmark - inputs.maintenancePct) * inputs.capex;
+    } else {
+      s.maintenanceOpexAddon = 0;
+    }
+  } else {
+    s.maintenanceOpexAddon = 0;
+  }
+
+  // Technical: revenue reduction
+  if (stressFlags.technical) {
+    if (inputs.foreignTech === 'high') s.techRevenueLoss = 0.07;
+    else if (inputs.foreignTech === 'some') s.techRevenueLoss = 0.03;
+    else s.techRevenueLoss = 0;
+  } else {
+    s.techRevenueLoss = 0;
+  }
+
+  return s;
+}
+
+// ── BUILD CASH FLOWS ──
+function buildCashFlows(inputs, stressParams) {
+  const sp = stressParams;
+  const capex = inputs.capex + sp.capexOverrun + sp.wcPenalty;
+  const monthlyOpex = inputs.annualOpex / 12;
+  const wcOutflow = inputs.wcMonths * monthlyOpex;
+
+  // Utilization path — ramp up from Year 1 toward steady state
+  // FIX BUG 6: Year 5 was resetting to userUtil instead of continuing ramp-up
+  const utilPath = [
+    Math.min(inputs.userUtil, 0.75),
+    Math.min(inputs.userUtil + 0.08, 0.85),
+    Math.min(inputs.userUtil + 0.15, 0.92),
+    Math.min(inputs.userUtil + 0.20, 0.95),
+    Math.min(inputs.userUtil + 0.25, 0.98),
+  ];
+
+  // Debt service
+  let annualDebtService = 0;
+  let loanAmount = 0;
+  if (inputs.financingMode === 'debt') {
+    loanAmount = inputs.capex * inputs.debtShare;
+    const r = inputs.loanRate;
+    const n = inputs.loanYears;
+    if (r > 0 && n > 0) {
+      annualDebtService = loanAmount * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    }
+  }
+
+  const flows = [];
+  // Year 0
+  flows.push(-(capex + wcOutflow));
+
+  // Years 1-5
+  const revenueData = [];
+  const opexData = [];
+  for (let y = 1; y <= 5; y++) {
+    const util = utilPath[y - 1];
+
+    // Revenue
+    let inflAdj;
+    if (sp.applyInflationStress) {
+      // Revenue passes through sector-adjusted portion of inflation
+      inflAdj = Math.pow(1 + inputs.inflationRate * sp.inflationPassthrough, y - 1);
+    } else {
+      inflAdj = Math.pow(1 + inputs.inflationRate, y - 1);
+    }
+
+    let yearMonthFactor = 1;
+    if (y === 1) yearMonthFactor = sp.year1RevenueFactor;
+
+    const revenueLoss = 1 - sp.powerRevenueLoss - sp.techRevenueLoss;
+    const revenue = inputs.annualRevenue * util * yearMonthFactor * inflAdj * Math.max(0.1, revenueLoss);
+
+    // Opex: 65% fixed + 35% variable
+    const effectiveUtil = util * (y === 1 ? sp.year1RevenueFactor : 1);
+    let opexInflAdj = Math.pow(1 + inputs.inflationRate, y - 1);
+    let opex = inputs.annualOpex * (0.65 + 0.35 * effectiveUtil) * opexInflAdj;
+    opex += sp.maintenanceOpexAddon * opexInflAdj;
+
+    let cf = revenue - opex;
+    if (inputs.financingMode === 'debt') {
+      cf -= annualDebtService;
+    }
+
+    // Year 5: add back working capital
+    if (y === 5) cf += wcOutflow;
+
+    flows.push(cf);
+    revenueData.push(revenue);
+    opexData.push(opex);
+  }
+
+  return { flows, revenueData, opexData, annualDebtService, loanAmount };
+}
+
+// ── IRR via Bisection ──
+function computeNPV(flows, rate) {
+  let npv = 0;
+  for (let t = 0; t < flows.length; t++) {
+    npv += flows[t] / Math.pow(1 + rate, t);
+  }
+  return npv;
+}
+
+function computeIRR(flows) {
+  let lo = -0.5, hi = 5.0;
+  // Check if project is viable at all
+  const npvAtZero = computeNPV(flows, 0);
+  if (npvAtZero < 0 && computeNPV(flows, -0.49) < 0) return -0.5;
+
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    const npv = computeNPV(flows, mid);
+    if (npv > 0) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// ── RUN THE FULL ENGINE ──
+let results = null;
+
+function runStressTest() {
+  const inputs = getInputs();
+
+  // Animate loading steps
+  const steps = ['ls1', 'ls2', 'ls3', 'ls4', 'ls5', 'ls6'];
+  let si = 0;
+  const loadingInterval = setInterval(() => {
+    if (si < steps.length) {
+      if (si > 0) {
+        document.getElementById(steps[si - 1]).textContent = '✓';
+        document.getElementById(steps[si - 1]).classList.add('done');
+      }
+      document.getElementById(steps[si]).textContent = 'computing';
+      si++;
+    }
+  }, 250);
+
+  setTimeout(() => {
+    clearInterval(loadingInterval);
+    steps.forEach(s => {
+      document.getElementById(s).textContent = '✓';
+      document.getElementById(s).classList.add('done');
+    });
+
+    // === COMPUTE BASE IRR ===
+    const noStress = { fx: false, logistics: false, power: false, inflation: false, wc: false, maintenance: false, technical: false };
+    const baseParams = computeStressParams(inputs, noStress);
+    const baseCF = buildCashFlows(inputs, baseParams);
+    const baseIRR = computeIRR(baseCF.flows);
+
+    // === COMPUTE FULLY STRESSED IRR ===
+    const allStress = { fx: true, logistics: true, power: true, inflation: true, wc: true, maintenance: true, technical: true };
+    const fullStressParams = computeStressParams(inputs, allStress);
+    const fullStressCF = buildCashFlows(inputs, fullStressParams);
+    const stressedIRR = computeIRR(fullStressCF.flows);
+
+    // === S-CURVE SCORING FUNCTION ===
+    // FIX C: Replace linear 0-100 with sigmoid [5, 95]
+    // No variable ever scores exactly 0 or 100 — investors get graduated signals
+    function scurveScore(irrDrop, maxDrop) {
+      const x = irrDrop / maxDrop; // 0 = no drop, 1 = expected max, 2+ = extreme
+      // Sigmoid centered at x=0.5, steepness=5
+      const score = 95 - 90 / (1 + Math.exp(-5 * (x - 0.5)));
+      return Math.max(5, Math.min(95, score));
+    }
+
+    // === FIX D: Graduated base penalty (replaces hard -5% cutoff) ===
+    // If base IRR < 0, apply a continuous multiplier that pushes scores down
+    // baseIRR >= 0%  → multiplier = 1.0 (no penalty)
+    // baseIRR = -7.5% → multiplier = 0.5
+    // baseIRR = -15% → multiplier = 0.05 (floor)
+    let basePenalty = 1.0;
+    if (baseIRR < 0) {
+      basePenalty = Math.max(0.05, Math.min(1.0, (baseIRR + 0.15) / 0.15));
+    }
+
+    // === COMPUTE INDIVIDUAL VARIABLE SCORES ===
+    VARIABLES = getAdjustedVariables(inputs);
+    const varResults = [];
+
+    for (const v of VARIABLES) {
+      const flags = { ...noStress, [v.key]: true };
+      const sp = computeStressParams(inputs, flags);
+      const cf = buildCashFlows(inputs, sp);
+      const sIRR = computeIRR(cf.flows);
+      const irrDrop = (baseIRR - sIRR) * 100; // in pp
+
+      // S-curve score with base penalty
+      let rawScore = scurveScore(Math.max(0, irrDrop), v.maxDrop);
+      rawScore = rawScore * basePenalty;
+      rawScore = Math.max(5, Math.min(95, Math.round(rawScore * 10) / 10));
+
+      varResults.push({
+        ...v,
+        stressedIRR: sIRR,
+        irrDrop: irrDrop,
+        score: rawScore,
+      });
+    }
+
+    // === COMPOSITE SCORE ===
+    let compositeScore = 0;
+    for (const vr of varResults) {
+      compositeScore += vr.score * vr.weight;
+    }
+    compositeScore = Math.round(compositeScore * basePenalty); // double-apply for broken projects
+    compositeScore = Math.max(0, Math.min(95, compositeScore));
+
+    // === WATERFALL (cumulative) ===
+    const waterfallSteps = [];
+    const waterfallOrder = ['fx', 'logistics', 'power', 'inflation', 'wc', 'maintenance', 'technical'];
+    const waterfallNames = ['FX Realism', 'Logistics', 'Power', 'Inflation', 'Working Capital', 'Maintenance', 'Technical'];
+    let cumulFlags = { ...noStress };
+    let prevIRR = baseIRR;
+    waterfallSteps.push({ name: 'Base IRR', irr: baseIRR * 100, delta: 0 });
+    for (let i = 0; i < waterfallOrder.length; i++) {
+      cumulFlags[waterfallOrder[i]] = true;
+      const sp = computeStressParams(inputs, cumulFlags);
+      const cf = buildCashFlows(inputs, sp);
+      const newIRR = computeIRR(cf.flows);
+      const delta = (prevIRR - newIRR) * 100;
+      waterfallSteps.push({ name: waterfallNames[i], irr: newIRR * 100, delta: delta });
+      prevIRR = newIRR;
+    }
+
+    // === SENSITIVITY MATRIX ===
+    const revShocks = [-0.20, -0.10, 0, 0.10, 0.20];
+    const opexShocks = [-0.10, 0, 0.10, 0.20, 0.30];
+    const sensMatrix = [];
+    for (const os of opexShocks) {
+      const row = [];
+      for (const rs of revShocks) {
+        // Rebuild cash flows with shocks
+        const sp = computeStressParams(inputs, allStress);
+        const capex = inputs.capex + sp.capexOverrun + sp.wcPenalty;
+        const monthlyOpex = inputs.annualOpex / 12;
+        const wcOutflow = inputs.wcMonths * monthlyOpex;
+        // FIX: Use same corrected ramp-up path as main engine
+        const utilPath = [
+          Math.min(inputs.userUtil, 0.75),
+          Math.min(inputs.userUtil + 0.08, 0.85),
+          Math.min(inputs.userUtil + 0.15, 0.92),
+          Math.min(inputs.userUtil + 0.20, 0.95),
+          Math.min(inputs.userUtil + 0.25, 0.98),
+        ];
+        let annualDebtService = 0;
+        if (inputs.financingMode === 'debt') {
+          const la = inputs.capex * inputs.debtShare;
+          const r = inputs.loanRate;
+          const n = inputs.loanYears;
+          if (r > 0 && n > 0) annualDebtService = la * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+        }
+        const flows = [-(capex + wcOutflow)];
+        for (let y = 1; y <= 5; y++) {
+          const util = utilPath[y - 1];
+          let inflAdj = Math.pow(1 + inputs.inflationRate * sp.inflationPassthrough, y - 1);
+          let ymf = y === 1 ? sp.year1RevenueFactor : 1;
+          const rl = 1 - sp.powerRevenueLoss - sp.techRevenueLoss;
+          const rev = inputs.annualRevenue * (1 + rs) * util * ymf * inflAdj * Math.max(0.1, rl);
+          const eu = util * (y === 1 ? sp.year1RevenueFactor : 1);
+          let oia = Math.pow(1 + inputs.inflationRate, y - 1);
+          let opex = inputs.annualOpex * (1 + os) * (0.65 + 0.35 * eu) * oia;
+          opex += sp.maintenanceOpexAddon * oia;
+          let cf = rev - opex;
+          if (inputs.financingMode === 'debt') cf -= annualDebtService;
+          if (y === 5) cf += wcOutflow;
+          flows.push(cf);
+        }
+        row.push(computeIRR(flows) * 100);
+      }
+      sensMatrix.push(row);
+    }
+
+    // === RATIOS ===
+    const breakEvenUtil = (inputs.annualOpex / inputs.annualRevenue) * 100;
+    const y1Revenue = fullStressCF.revenueData[0];
+    const y1Opex = fullStressCF.opexData[0];
+    const y1EBITDA = y1Revenue - y1Opex;
+    const y1Margin = y1Revenue > 0 ? (y1EBITDA / y1Revenue) * 100 : 0;
+    const payback = y1EBITDA > 0 ? inputs.capex / y1EBITDA : Infinity;
+    const clearanceMonths = inputs.customsDays / 30;
+    const wcCoverage = inputs.wcMonths / (clearanceMonths + 2);
+    let dscr = null;
+    if (inputs.financingMode === 'debt' && fullStressCF.annualDebtService > 0) {
+      dscr = y1EBITDA / fullStressCF.annualDebtService;
+    }
+
+    // === BREAK CONDITIONS ===
+    const breakConditions = [];
+    if (baseIRR * 100 < 0) breakConditions.push({ ok: false, label: 'Negative Base IRR', desc: `Base IRR is ${(baseIRR*100).toFixed(1)}% — the project does not generate positive returns even without frontier stress.` });
+    if (stressedIRR * 100 < 0) breakConditions.push({ ok: false, label: 'Negative Stressed IRR', desc: `Stressed IRR falls to ${(stressedIRR*100).toFixed(1)}% — project breaks under normal frontier conditions.` });
+    if (breakEvenUtil > inputs.userUtil * 100) breakConditions.push({ ok: false, label: 'Utilization Below Break-even', desc: `Break-even utilization is ${breakEvenUtil.toFixed(0)}% but Year 1 target is ${(inputs.userUtil*100).toFixed(0)}%. The project cannot cover costs at planned utilization.` });
+    if (wcCoverage < 1) breakConditions.push({ ok: false, label: 'Working Capital Shortfall', desc: `WC coverage is ${wcCoverage.toFixed(2)}x (need 1.0x minimum). Project may run out of cash before revenue starts.` });
+    if (dscr !== null && dscr < 1.2) breakConditions.push({ ok: false, label: 'DSCR Below Threshold', desc: `DSCR is ${dscr.toFixed(2)}x (minimum 1.20x required). Debt service may not be covered.` });
+    if (breakConditions.length === 0) breakConditions.push({ ok: true, label: 'No Critical Breaks', desc: 'No immediate structural breaks detected. All key thresholds are met.' });
+
+    // === DOMINANT RISK ===
+    let dominantRisk = varResults[0];
+    for (const vr of varResults) {
+      if (vr.score < dominantRisk.score) dominantRisk = vr;
+    }
+
+    // === VERDICT (recalibrated for S-curve [5,95] range) ===
+    // S-curve compresses: old 80 ≈ new 75, old 60 ≈ new 55, old 40 ≈ new 35
+    let verdict, verdictColor, verdictBg;
+    if (compositeScore >= 75) { verdict = 'Structurally Resilient'; verdictColor = '#20C9B7'; verdictBg = 'rgba(32,201,183,.15)'; }
+    else if (compositeScore >= 55) { verdict = 'Conditionally Viable'; verdictColor = '#F59E0B'; verdictBg = 'rgba(245,158,11,.15)'; }
+    else if (compositeScore >= 35) { verdict = 'Fragile'; verdictColor = '#EF4444'; verdictBg = 'rgba(239,68,68,.15)'; }
+    else { verdict = 'Not Investment-Ready'; verdictColor = '#991B1B'; verdictBg = 'rgba(153,27,27,.15)'; }
+
+    // FIX A: IRR reality check — add warning to break conditions if >100%
+    if (baseIRR > 1.0) {
+      breakConditions.unshift({ ok: false, label: 'Unrealistic Base IRR', desc: `Base IRR computes to ${(baseIRR*100).toFixed(0)}% — this likely reflects over-optimistic inputs (very high revenue relative to capex, or unrealistic utilization). Displayed as 150%+ where applicable. Verify inputs before relying on this score.` });
+    }
+
+    results = {
+      inputs, baseIRR, stressedIRR, baseCF, fullStressCF,
+      varResults, compositeScore, waterfallSteps, sensMatrix,
+      breakEvenUtil, y1Margin, payback, wcCoverage, dscr,
+      breakConditions, dominantRisk, verdict, verdictColor, verdictBg,
+      y1EBITDA,
+    };
+
+    // Analytics: track stress test completion (privacy-safe — no financial inputs)
+    if (window.posthog) posthog.capture('stress_test_completed', {
+      sector: inputs.sector,
+      country: inputs.country,
+      project_type: inputs.projectType,
+      score: compositeScore,
+      verdict: verdict,
+      dominant_risk: dominantRisk,
+      financing_mode: inputs.financingMode
+    });
+
+    // Render after small delay for animation
+    setTimeout(() => {
+      document.getElementById('loadingView').style.display = 'none';
+      document.getElementById('resultView').style.display = '';
+      renderResults();
+    }, 300);
+
+  }, 1500);
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════
+function renderResults() {
+  const R = results;
+  const I = R.inputs;
+
+  // Header
+  document.getElementById('vmeta').textContent = `${I.sector} · ${I.country} · ${I.projectType}`;
+  document.getElementById('vname').textContent = I.projectName;
+  const vb = document.getElementById('vbadge');
+  vb.textContent = R.verdict;
+  vb.style.background = R.verdictBg;
+  vb.style.color = R.verdictColor;
+
+  // Animated score counter
+  animateCounter('snum', R.compositeScore, R.verdictColor);
+
+  // Show input warnings in results panel if any
+  const warningsBanner = document.getElementById('inputWarningsBanner');
+  if (window._inputWarnings && window._inputWarnings.length > 0) {
+    warningsBanner.innerHTML = '⚠️ <strong>Input warnings:</strong><br>' + window._inputWarnings.map(w => '• ' + w).join('<br>');
+    warningsBanner.style.display = 'block';
+  } else {
+    warningsBanner.style.display = 'none';
+  }
+
+  // FIX A: Helper to format IRR with 150% cap
+  function fmtIRR(irr) {
+    const pct = irr * 100;
+    if (pct > 150) return '150%+';
+    return pct.toFixed(1) + '%';
+  }
+
+  // Metrics row
+  const baseIRRDisplay = fmtIRR(R.baseIRR);
+  const stressedIRRDisplay = fmtIRR(R.stressedIRR);
+  document.getElementById('mIRR').textContent = baseIRRDisplay;
+  document.getElementById('mAdj').textContent = stressedIRRDisplay;
+  const erosion = (R.baseIRR - R.stressedIRR) * 100;
+  document.getElementById('mGap').textContent = (erosion > 150 ? '150+' : erosion.toFixed(1)) + ' pp';
+  document.getElementById('mBE').textContent = R.breakEvenUtil.toFixed(0) + '%';
+
+  // FIX A: Color base IRR if unrealistically high
+  const baseEl = document.getElementById('mIRR');
+  if (R.baseIRR > 1.5) { baseEl.style.color = 'var(--am)'; baseEl.title = 'IRR above 150% — verify inputs'; }
+
+  // Color stressed IRR
+  const adjEl = document.getElementById('mAdj');
+  if (R.stressedIRR < 0) adjEl.style.color = 'var(--re)';
+  else if (R.stressedIRR < 0.08) adjEl.style.color = 'var(--am)';
+  else if (R.stressedIRR > 1.5) { adjEl.style.color = 'var(--am)'; adjEl.title = 'IRR above 150% — verify inputs'; }
+
+  renderRadarChart();
+  renderWaterfallChart();
+  renderCashFlowChart();
+  renderSensitivityMatrix();
+  renderRatios();
+  renderBreakConditions();
+  renderVariableBreakdown();
+  renderVerdictSummary();
+  renderScorecard();
+}
+
+function animateCounter(id, target, color) {
+  const el = document.getElementById(id);
+  el.style.color = color;
+  let current = 0;
+  const step = Math.max(1, Math.floor(target / 40));
+  const interval = setInterval(() => {
+    current += step;
+    if (current >= target) {
+      current = target;
+      clearInterval(interval);
+    }
+    el.textContent = current;
+  }, 30);
+}
+
+// ── RADAR CHART ──
+function renderRadarChart() {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  const R = results;
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: R.varResults.map(v => v.name),
+      datasets: [{
+        label: 'Variable Score',
+        data: R.varResults.map(v => Math.round(v.score)),
+        backgroundColor: 'rgba(32,201,183,.15)',
+        borderColor: '#20C9B7',
+        borderWidth: 2,
+        pointBackgroundColor: R.varResults.map(v => v.score >= 70 ? '#10B981' : v.score >= 40 ? '#F59E0B' : '#EF4444'),
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, color: '#4B5563', backdropColor: 'transparent', font: { size: 10 } },
+          grid: { color: 'rgba(26,58,85,.5)' },
+          angleLines: { color: 'rgba(26,58,85,.5)' },
+          pointLabels: { color: '#9CA3AF', font: { size: 10, family: 'Oswald' } },
+        }
+      },
+      plugins: { legend: { display: false } },
+    }
+  });
+}
+
+// ── WATERFALL CHART ──
+function renderWaterfallChart() {
+  const ctx = document.getElementById('waterfallChart').getContext('2d');
+  const R = results;
+  const ws = R.waterfallSteps;
+
+  const labels = ws.map(s => s.name);
+  // For waterfall: base bars (transparent) + visible bars
+  const baseData = [];
+  const deltaData = [];
+  const colors = [];
+
+  let running = ws[0].irr;
+  baseData.push(0);
+  deltaData.push(running);
+  colors.push('#20C9B7');
+
+  for (let i = 1; i < ws.length; i++) {
+    const newIRR = ws[i].irr;
+    const delta = ws[i].delta;
+    baseData.push(Math.min(running, newIRR));
+    deltaData.push(Math.abs(delta));
+    colors.push(delta > 2 ? '#EF4444' : delta > 0.5 ? '#F59E0B' : '#4B5563');
+    running = newIRR;
+  }
+
+  // Add final stressed IRR bar
+  labels.push('Stressed IRR');
+  baseData.push(0);
+  deltaData.push(R.stressedIRR * 100);
+  colors.push(R.stressedIRR < 0 ? '#991B1B' : R.stressedIRR < 0.08 ? '#F59E0B' : '#17A090');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Base', data: baseData, backgroundColor: 'transparent', borderWidth: 0 },
+        { label: 'Change', data: deltaData, backgroundColor: colors, borderWidth: 0, borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, ticks: { color: '#9CA3AF', font: { size: 9, family: 'Oswald' }, maxRotation: 45 }, grid: { display: false } },
+        y: { stacked: true, ticks: { color: '#4B5563', callback: v => v + '%', font: { size: 10 } }, grid: { color: 'rgba(26,58,85,.3)' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex === 0) return '';
+              return ctx.parsed.y.toFixed(1) + '% IRR impact';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── CASH FLOW CHART ──
+function renderCashFlowChart() {
+  const ctx = document.getElementById('cashFlowChart').getContext('2d');
+  const R = results;
+
+  const labels = ['Year 0', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
+
+  // Build base cash flows
+  const noStress = { fx: false, logistics: false, power: false, inflation: false, wc: false, maintenance: false, technical: false };
+  const baseParams = computeStressParams(R.inputs, noStress);
+  const baseCF = buildCashFlows(R.inputs, baseParams);
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Base Cash Flow',
+          data: baseCF.flows.map(v => Math.round(v)),
+          backgroundColor: baseCF.flows.map(v => v >= 0 ? 'rgba(32,201,183,.6)' : 'rgba(32,201,183,.25)'),
+          borderColor: '#20C9B7',
+          borderWidth: 1,
+          borderRadius: 3,
+        },
+        {
+          label: 'Stressed Cash Flow',
+          data: R.fullStressCF.flows.map(v => Math.round(v)),
+          backgroundColor: R.fullStressCF.flows.map(v => v >= 0 ? 'rgba(239,68,68,.5)' : 'rgba(239,68,68,.25)'),
+          borderColor: '#EF4444',
+          borderWidth: 1,
+          borderRadius: 3,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#9CA3AF', font: { size: 11, family: 'Oswald' } }, grid: { display: false } },
+        y: {
+          ticks: {
+            color: '#4B5563',
+            font: { size: 10 },
+            callback: v => {
+              if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+              if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+              return v;
+            }
+          },
+          grid: { color: 'rgba(26,58,85,.3)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: '#9CA3AF', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return ctx.dataset.label + ': $' + v.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── SENSITIVITY MATRIX ──
+function renderSensitivityMatrix() {
+  const R = results;
+  const revLabels = ['-20%', '-10%', '0%', '+10%', '+20%'];
+  const opexLabels = ['-10%', '0%', '+10%', '+20%', '+30%'];
+
+  let html = '<table class="sens-table"><thead><tr><th class="corner">Opex \\ Rev</th>';
+  for (const rl of revLabels) html += `<th>${rl}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (let i = 0; i < R.sensMatrix.length; i++) {
+    html += `<tr><td class="row-label">${opexLabels[i]}</td>`;
+    for (let j = 0; j < R.sensMatrix[i].length; j++) {
+      const val = R.sensMatrix[i][j];
+      let cls = 'sens-green';
+      if (val < 0) cls = 'sens-red';
+      else if (val < 8) cls = 'sens-orange';
+      else if (val < 15) cls = 'sens-yellow';
+      // FIX BUG 4 + FIX A: Cap display at both ends
+      let displayVal;
+      if (val <= -49.9) displayVal = '< -50%';
+      else if (val > 150) displayVal = '150%+';
+      else displayVal = val.toFixed(1) + '%';
+      html += `<td class="${cls}">${displayVal}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('sensitivityMatrix').innerHTML = html;
+}
+
+// ── RATIOS ──
+function renderRatios() {
+  const R = results;
+  let html = '';
+
+  // DSCR
+  if (R.dscr !== null) {
+    const cls = R.dscr >= 1.5 ? 'ratio-ok' : R.dscr >= 1.2 ? 'ratio-warn' : 'ratio-bad';
+    html += `<div class="ratio-row"><div><div class="ratio-label">DSCR (Year 1)</div><div class="ratio-note">Min: 1.20x. Stressed Year 1 EBITDA / annual debt service.</div></div><div class="ratio-val ${cls}">${R.dscr.toFixed(2)}x</div></div>`;
+  }
+
+  // WC Coverage
+  const wcCls = R.wcCoverage >= 1.2 ? 'ratio-ok' : R.wcCoverage >= 1.0 ? 'ratio-warn' : 'ratio-bad';
+  html += `<div class="ratio-row"><div><div class="ratio-label">Working Capital Coverage</div><div class="ratio-note">WC months / (clearance months + 2). Min: 1.0x.</div></div><div class="ratio-val ${wcCls}">${R.wcCoverage.toFixed(2)}x</div></div>`;
+
+  // Break-even utilization
+  const beCls = R.breakEvenUtil < R.inputs.userUtil * 100 ? 'ratio-ok' : 'ratio-bad';
+  html += `<div class="ratio-row"><div><div class="ratio-label">Break-even Utilization</div><div class="ratio-note">Must be below Year 1 utilization (${(R.inputs.userUtil*100).toFixed(0)}%).</div></div><div class="ratio-val ${beCls}">${R.breakEvenUtil.toFixed(0)}%</div></div>`;
+
+  // Payback
+  const pbCls = R.payback <= 4 ? 'ratio-ok' : R.payback <= 7 ? 'ratio-warn' : 'ratio-bad';
+  html += `<div class="ratio-row"><div><div class="ratio-label">Payback Period (stressed)</div><div class="ratio-note">Capex / Year 1 stressed EBITDA. Simple payback proxy.</div></div><div class="ratio-val ${pbCls}">${R.payback === Infinity ? '∞' : R.payback.toFixed(1) + ' yrs'}</div></div>`;
+
+  // Y1 EBITDA Margin
+  const emCls = R.y1Margin > 20 ? 'ratio-ok' : R.y1Margin > 10 ? 'ratio-warn' : 'ratio-bad';
+  html += `<div class="ratio-row"><div><div class="ratio-label">Year 1 EBITDA Margin (stressed)</div><div class="ratio-note">Stressed (Revenue - Opex) / Revenue.</div></div><div class="ratio-val ${emCls}">${R.y1Margin.toFixed(1)}%</div></div>`;
+
+  document.getElementById('ratiosSection').innerHTML = html;
+}
+
+// ── BREAK CONDITIONS ──
+function renderBreakConditions() {
+  const R = results;
+  let html = '';
+  for (const bc of R.breakConditions) {
+    html += `<div class="break-item ${bc.ok ? 'ok' : ''}"><div class="break-label" style="color:${bc.ok ? 'var(--ok)' : 'var(--re)'}">${bc.ok ? '✓' : '⚠'} ${bc.label}</div><div class="break-desc">${bc.desc}</div></div>`;
+  }
+  document.getElementById('breakConditions').innerHTML = html;
+}
+
+// ── VARIABLE BREAKDOWN ──
+function renderVariableBreakdown() {
+  const R = results;
+  let html = '';
+  for (const vr of R.varResults) {
+    const cls = vr.score >= 70 ? 'g' : vr.score >= 40 ? 'w' : 'b';
+    const color = vr.score >= 70 ? 'var(--ok)' : vr.score >= 40 ? 'var(--am)' : 'var(--re)';
+    const explanation = getVariableExplanation(vr, R.inputs);
+    html += `
+      <div class="vi ${cls}">
+        <div class="vihdr">
+          <div><span class="viname">${vr.name}</span><span class="viwt">${(vr.weight*100).toFixed(0)}% weight</span></div>
+          <div class="vsc" style="color:${color}">${Math.round(vr.score)}/100</div>
+        </div>
+        <div class="vitr"><div class="vifill" style="width:${vr.score}%; background:${color}"></div></div>
+        <div class="viverd">${explanation}</div>
+        <div class="vi-impact">IRR impact: -${vr.irrDrop > 150 ? '150+' : vr.irrDrop.toFixed(2)} pp (max expected: ${vr.maxDrop} pp)</div>
+      </div>`;
+  }
+  document.getElementById('variableBreakdown').innerHTML = html;
+}
+
+function getVariableExplanation(vr, inputs) {
+  const cm = inputs.countryMod;
+  switch (vr.key) {
+    case 'fx': {
+      let overrun = 0;
+      if (inputs.fxGap === 'very_low') overrun = 25;
+      else if (inputs.fxGap === 'slightly_low') overrun = 12;
+      else if (inputs.fxGap === 'unknown') overrun = 15;
+      overrun += cm.fxOverrun;
+      const cost = inputs.capex * inputs.importSharePct * overrun / 100;
+      return overrun > 0
+        ? `FX assumption rated "${inputs.fxGap}". Applied ${overrun}% overrun on imported capex share (${(inputs.importSharePct*100).toFixed(0)}%), adding $${Math.round(cost).toLocaleString()} to effective capex.`
+        : `FX assumption rated as realistic. No capex overrun applied.`;
+    }
+    case 'logistics': {
+      const totalDays = inputs.customsDays + inputs.fxDelay;
+      const months = totalDays / 30;
+      const factor = Math.max(0.25, (12 - months) / 12);
+      return `Customs (${Math.round(inputs.customsDays)}d) + FX delay (${Math.round(inputs.fxDelay)}d) = ${months.toFixed(1)} months of delay. Year 1 revenue factor reduced to ${(factor*100).toFixed(0)}%.`;
+    }
+    case 'power': {
+      let loss = 0;
+      if (inputs.backupPower === 'none') loss = 12;
+      else if (inputs.backupPower === 'partial') loss = 5;
+      loss += cm.powerDelta;
+      return loss > 0
+        ? `Backup power: "${inputs.backupPower}". Applied ${loss}% revenue loss from downtime and efficiency drag.`
+        : `Full backup power provisioned. No revenue loss applied.`;
+    }
+    case 'inflation': {
+      const rate = inputs.inflationRate * 100;
+      const gap = rate * 0.25;
+      return `Inflation at ${rate.toFixed(1)}%. Opex grows at full rate but revenue only passes through 75%, creating a ${gap.toFixed(1)} pp annual margin squeeze that compounds over 5 years.`;
+    }
+    case 'wc': {
+      const clearance = inputs.customsDays / 30;
+      const required = clearance + 2;
+      const coverage = inputs.wcMonths / required;
+      return coverage >= 1
+        ? `WC of ${inputs.wcMonths} months covers ${required.toFixed(1)} required months (${(coverage*100).toFixed(0)}% coverage). Adequate buffer.`
+        : `WC of ${inputs.wcMonths} months falls short of ${required.toFixed(1)} required months (${(coverage*100).toFixed(0)}% coverage). Risk of cash shortfall before revenue starts.`;
+    }
+    case 'maintenance': {
+      const pct = inputs.maintenancePct * 100;
+      const benchmark = 7;
+      return pct >= 5
+        ? `Maintenance reserve at ${pct.toFixed(1)}% of capex. ${pct >= benchmark ? 'Meets' : 'Below'} frontier benchmark of ${benchmark}%. No additional opex stress applied.`
+        : `Maintenance reserve at ${pct.toFixed(1)}% of capex — critically below 5% threshold. Added ${(benchmark - pct).toFixed(1)}% of capex ($${Math.round((benchmark/100 - inputs.maintenancePct) * inputs.capex).toLocaleString()}/yr) to opex.`;
+    }
+    case 'technical': {
+      let loss = 0;
+      if (inputs.foreignTech === 'high') loss = 7;
+      else if (inputs.foreignTech === 'some') loss = 3;
+      return loss > 0
+        ? `Foreign tech dependency: "${inputs.foreignTech}". Applied ${loss}% revenue reduction for commissioning delays and specialist retention risk.`
+        : `No significant foreign technical dependency. No revenue reduction applied.`;
+    }
+    default: return '';
+  }
+}
+
+// ── VERDICT SUMMARY ──
+function renderVerdictSummary() {
+  const R = results;
+  const I = R.inputs;
+  const erosion = (R.baseIRR - R.stressedIRR) * 100;
+
+  // Find top 2 risk variables (lowest scores)
+  const sorted = [...R.varResults].sort((a, b) => a.score - b.score);
+  const top1 = sorted[0];
+  const top2 = sorted[1];
+
+  let text = `<strong style="color:${R.verdictColor}">${R.verdict}</strong> — Score: ${R.compositeScore}/100.<br><br>`;
+  const fmtVerdIRR = (v) => { const p = v*100; return p > 150 ? '150%+' : p.toFixed(1) + '%'; };
+  text += `This ${I.sector.toLowerCase()} project in ${I.country} shows a base IRR of ${fmtVerdIRR(R.baseIRR)} which erodes by ${erosion > 150 ? '150+' : erosion.toFixed(1)} percentage points to ${fmtVerdIRR(R.stressedIRR)} under frontier stress.<br><br>`;
+  text += `The dominant risk is <strong>${top1.name}</strong> (score: ${Math.round(top1.score)}/100, eroding IRR by ${top1.irrDrop.toFixed(1)} pp).`;
+  if (top2.score < 55) text += ` Secondary risk is <strong>${top2.name}</strong> (score: ${Math.round(top2.score)}/100).`;
+  text += '<br><br>';
+
+  if (R.compositeScore >= 75) {
+    text += 'The project assumptions hold under realistic frontier stress. Proceed with standard due diligence on the identified risk areas.';
+  } else if (R.compositeScore >= 55) {
+    text += 'The project is viable with corrections. Address the dominant risk factor and retest before committing capital.';
+  } else if (R.compositeScore >= 35) {
+    text += 'Normal frontier conditions will likely break this model. Significant restructuring of assumptions is needed before this project is bankable.';
+  } else {
+    text += 'Fundamental redesign needed. The financial model does not survive basic frontier realities. Revisit core assumptions before presenting to investors.';
+  }
+
+  document.getElementById('verdictSummary').innerHTML = text;
+}
+
+// ── SCORECARD (privacy-safe) ──
+function renderScorecard() {
+  const R = results;
+  const I = R.inputs;
+  const sorted = [...R.varResults].sort((a, b) => a.score - b.score);
+  const primaryBreak = R.breakConditions[0];
+
+  let html = `
+    <div class="scorecard" id="scorecard">
+      <div class="scorecard-head">
+        <div class="scorecard-brand">
+          <svg width="36" height="36" viewBox="0 0 42 42" fill="none">
+            <rect width="42" height="42" rx="12" fill="url(#lg2)"/>
+            <defs><linearGradient id="lg2" x1="0" y1="0" x2="42" y2="42"><stop stop-color="#20C9B7"/><stop offset="1" stop-color="#17A090"/></linearGradient></defs>
+            <text x="21" y="29" text-anchor="middle" font-family="Oswald,sans-serif" font-size="24" font-weight="700" fill="#0B1E33">B</text>
+          </svg>
+          <div>
+            <div class="scorecard-title">B-BOX SCORECARD</div>
+            <div class="scorecard-tag">Frontier pre-investment stress test</div>
+          </div>
+        </div>
+        <div class="scorecard-score">
+          <div class="num" style="color:${R.verdictColor}">${R.compositeScore}</div>
+          <div class="den">/ 100</div>
+        </div>
+      </div>
+      <div class="scorecard-grid">
+        <div class="scorecard-item"><div class="k">Verdict</div><div class="v" style="color:${R.verdictColor}">${R.verdict}</div></div>
+        <div class="scorecard-item"><div class="k">Sector · Country</div><div class="v">${I.sector} · ${I.country}</div></div>
+        <div class="scorecard-item"><div class="k">Dominant Risk</div><div class="v">${sorted[0].name} (${Math.round(sorted[0].score)}/100)</div></div>
+        <div class="scorecard-item"><div class="k">Primary Break Condition</div><div class="v">${primaryBreak.label}</div></div>
+      </div>
+      <div class="scorecard-radar-wrap">
+        <div class="scorecard-radar-title">Risk Profile</div>
+        <div class="scorecard-radar-canvas"><canvas id="scorecardRadar"></canvas></div>
+      </div>
+      <div style="text-align:center; margin-top:12px; font-size:10px; color:var(--g3);">Generated by B-Box v2.0 · Privacy-safe: no financial inputs shown</div>
+    </div>`;
+
+  document.getElementById('scorecardContainer').innerHTML = html;
+
+  // Render mini radar
+  setTimeout(() => {
+    const ctx = document.getElementById('scorecardRadar').getContext('2d');
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: R.varResults.map(v => v.name.split(' ').slice(0,2).join(' ')),
+        datasets: [{
+          data: R.varResults.map(v => Math.round(v.score)),
+          backgroundColor: 'rgba(32,201,183,.15)',
+          borderColor: '#20C9B7',
+          borderWidth: 2,
+          pointBackgroundColor: R.varResults.map(v => v.score >= 70 ? '#10B981' : v.score >= 40 ? '#F59E0B' : '#EF4444'),
+          pointRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, display: false },
+            grid: { color: 'rgba(26,58,85,.4)' },
+            angleLines: { color: 'rgba(26,58,85,.4)' },
+            pointLabels: { color: '#9CA3AF', font: { size: 9 } },
+          }
+        },
+        plugins: { legend: { display: false } },
+      }
+    });
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function downloadScorecard() {
+  if (window.posthog) posthog.capture('scorecard_downloaded');
+  const el = document.getElementById('scorecard');
+  if (!el) return showToast('Scorecard not found.');
+  // Convert Chart.js canvases to images before html2canvas capture
+  const canvases = el.querySelectorAll('canvas');
+  const originals = [];
+  canvases.forEach(cvs => {
+    const img = document.createElement('img');
+    img.src = cvs.toDataURL('image/png');
+    img.style.width = cvs.style.width || cvs.offsetWidth + 'px';
+    img.style.height = cvs.style.height || cvs.offsetHeight + 'px';
+    originals.push({ canvas: cvs, parent: cvs.parentNode, img });
+    cvs.parentNode.replaceChild(img, cvs);
+  });
+  html2canvas(el, { backgroundColor: '#0B1E33', scale: 2, useCORS: true, allowTaint: true }).then(canvas => {
+    // Restore original canvases
+    originals.forEach(o => o.parent.replaceChild(o.canvas, o.img));
+    const link = document.createElement('a');
+    link.download = 'bbox-scorecard.png';
+    link.href = canvas.toDataURL();
+    link.click();
+    showToast('Scorecard downloaded.');
+  }).catch(err => {
+    // Restore originals on error too
+    originals.forEach(o => { try { o.parent.replaceChild(o.canvas, o.img); } catch(e){} });
+    console.error('Scorecard download error:', err);
+    showToast('Download failed. Try screenshot instead.');
+  });
+}
+
+function copyLinkedIn() {
+  const R = results;
+  if (!R) return;
+  if (window.posthog) posthog.capture('linkedin_snippet_copied', { score: R.compositeScore, verdict: R.verdict });
+  const sorted = [...R.varResults].sort((a, b) => a.score - b.score);
+  const text = `Just ran a B-Box frontier stress test on a ${R.inputs.sector.toLowerCase()} project in ${R.inputs.country}.
+
+Score: ${R.compositeScore}/100 — ${R.verdict}
+Dominant risk: ${sorted[0].name}
+Return erosion: ${((R.baseIRR - R.stressedIRR) * 100).toFixed(1)} percentage points under stress
+
+B-Box builds a 5-year DCF and stresses it against 7 frontier realities. Every score point traces to a computed financial impact.
+
+#FrontierMarkets #InvestmentAnalysis #BBox`;
+
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard.'))
+    .catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Copied to clipboard.');
+    });
+}
+
+function getDeepDive() {
+  const R = results;
+  if (!R) return;
+  if (window.posthog) posthog.capture('deep_dive_requested', { score: R.compositeScore, verdict: R.verdict, sector: R.inputs.sector, country: R.inputs.country });
+  // Open LinkedIn profile in new tab
+  window.open('https://www.linkedin.com/in/amir-kelifa-aaa47a195', '_blank');
+  // Also open email compose
+  const subject = encodeURIComponent(`B-Box Deep Dive Request — ${R.inputs.projectName}`);
+  const fmtEmailIRR = (v) => { const p = v*100; return p > 150 ? '150%+' : p.toFixed(1) + '%'; };
+  const body = encodeURIComponent(`Hi Amir,\n\nI just ran a B-Box stress test and I'd like to discuss a deeper analysis.\n\nProject: ${R.inputs.projectName || 'Unnamed'}\nScore: ${R.compositeScore}/100 — ${R.verdict}\nSector: ${R.inputs.sector} · ${R.inputs.country}\nBase IRR: ${fmtEmailIRR(R.baseIRR)}\nStressed IRR: ${fmtEmailIRR(R.stressedIRR)}\n\nLooking forward to connecting.\n\nBest regards`);
+  setTimeout(() => {
+    window.open(`mailto:akelifa5@gmail.com?subject=${subject}&body=${body}`);
+  }, 500);
+  showToast('Opening LinkedIn profile + email compose.');
+}
+
+function editInputs() {
+  resetLoadingView();
+  goToStep(3);
+}
+
+function resetLoadingView() {
+  document.getElementById('loadingView').style.display = '';
+  document.getElementById('resultView').style.display = 'none';
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById('ls' + i);
+    el.textContent = i === 1 ? 'computing' : 'queued';
+    el.classList.remove('done');
+  }
+  // Destroy all charts
+  Object.values(Chart.instances).forEach(c => c.destroy());
+  results = null;
+}
+
+function runAnother() {
+  if (window.posthog) posthog.capture('new_analysis_started');
+  // Reset form
+  document.querySelectorAll('input[type="number"], input[type="text"], textarea').forEach(el => el.value = '');
+  document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+  document.querySelectorAll('.checkbox').forEach(el => el.checked = false);
+  document.getElementById('financingFields').classList.add('conditional-hidden');
+  document.getElementById('debtShareWrap').classList.add('conditional-hidden');
+  resetLoadingView();
+  goToStep(1);
+}
+
+function openMethodology() {
+  document.getElementById('methodologyModal').classList.add('show');
+  if (window.posthog) posthog.capture('methodology_opened');
+}
+function closeMethodology() {
+  document.getElementById('methodologyModal').classList.remove('show');
+}
+document.getElementById('methodologyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeMethodology();
+});
+
+// ── PRIVACY & TERMS MODALS ──
+function openPrivacy() {
+  document.getElementById('privacyModal').classList.add('show');
+  if (window.posthog) posthog.capture('privacy_policy_opened');
+}
+function closePrivacy() {
+  document.getElementById('privacyModal').classList.remove('show');
+}
+function openTerms() {
+  document.getElementById('termsModal').classList.add('show');
+  if (window.posthog) posthog.capture('terms_of_use_opened');
+}
+function closeTerms() {
+  document.getElementById('termsModal').classList.remove('show');
+}
+document.getElementById('privacyModal').addEventListener('click', function(e) {
+  if (e.target === this) closePrivacy();
+});
+document.getElementById('termsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTerms();
+});
+
+// Initialize
+updateProgress();
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
