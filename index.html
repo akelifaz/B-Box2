@@ -876,13 +876,20 @@
 // ══════════════════════════════════════════════════
 
 // ── IN-APP BROWSER DETECTION ──
-const isInAppBrowser = /LinkedIn|FBAN|FBAV|Instagram|Twitter|MicroMessenger/i.test(navigator.userAgent);
+const isInAppBrowser = /LinkedInApp|FBAN|FBAV|FB_IAB|Instagram|Twitter|MicroMessenger/i.test(navigator.userAgent) || (navigator.userAgent.includes('Mobile') && !navigator.userAgent.includes('Safari/') && !navigator.userAgent.includes('Chrome/'));
 if (isInAppBrowser) {
   const banner = document.createElement('div');
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#F59E0B;color:#0B1E33;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;';
-  banner.innerHTML = 'For the best experience, open in your browser: tap ⋮ or ⋯ above and select "Open in Browser" <span style="margin-left:8px;cursor:pointer;opacity:.7" onclick="this.parentElement.remove()">✕</span>';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#F59E0B;color:#0B1E33;text-align:center;padding:12px 16px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;line-height:1.4;';
+  // Try to auto-open in real browser on iOS
+  const currentUrl = window.location.href;
+  const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+  if (isIOS && navigator.userAgent.includes('LinkedInApp')) {
+    banner.innerHTML = '<a href="x-safari-' + currentUrl + '" style="color:#0B1E33;text-decoration:underline;font-weight:700;">Tap here to open in Safari</a> for the full experience (downloads, charts) <span style="margin-left:8px;cursor:pointer;opacity:.7" onclick="this.parentElement.remove()">✕</span>';
+  } else {
+    banner.innerHTML = 'For the best experience, tap ⋮ above → "Open in Browser" <span style="margin-left:8px;cursor:pointer;opacity:.7" onclick="this.parentElement.remove()">✕</span>';
+  }
   document.body.prepend(banner);
-  if (window.posthog) posthog.capture('in_app_browser_detected', { source: navigator.userAgent.match(/LinkedIn|FBAN|FBAV|Instagram|Twitter/i)?.[0] || 'unknown' });
+  if (window.posthog) posthog.capture('in_app_browser_detected', { source: navigator.userAgent.match(/LinkedInApp|FBAN|FBAV|Instagram|Twitter/i)?.[0] || 'unknown', ua: navigator.userAgent.substring(0, 200) });
 }
 
 // ── NAVIGATION ──
@@ -2239,4 +2246,5 @@ updateProgress();
 })();
 </script></body>
 </html>
+
 
